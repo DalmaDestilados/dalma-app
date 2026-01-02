@@ -15,14 +15,15 @@ const Usuario = {
     return rows;
   },
 
-  async crearUsuario({ nombre, email, password, id_rol }) {
+  async crearUsuario({ nombre, email, password, id_rol, edad }) {
     const [result] = await pool.query(
-      `INSERT INTO usuarios (nombre, email, password, id_rol)
-       VALUES (?, ?, ?, ?)`,
-      [nombre, email, password, id_rol]
+      `INSERT INTO usuarios (nombre, email, password, id_rol, edad)
+      VALUES (?, ?, ?, ?, ?)`,
+      [nombre, email, password, id_rol, edad]
     );
     return result.insertId;
   },
+
 
   async obtenerPorEmail(email) {
     const [rows] = await pool.query(
