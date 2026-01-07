@@ -1,45 +1,49 @@
 import express from 'express';
-
 import authMiddleware from '../middlewares/auth.middleware.js';
 import verificarRol from '../middlewares/rol.middleware.js';
 
 import {
-  crearPerfil,
-  obtenerMiPerfil,
-  actualizarPerfil,
-  obtenerPerfilPublico
+  crearDestileria,
+  obtenerDestilerias,
+  obtenerDestileriaPorId,
+  actualizarDestileria,
+  eliminarDestileria,
+  obtenerDestileriasPublicas,
+  obtenerDestileriaPublicaPorId
 } from '../controllers/destileria.controller.js';
 
 const router = express.Router();
 
-const ROL_DESTILERIA = 25; 
+// Rutas publicas
+router.get('/public', obtenerDestileriasPublicas);
+router.get('/public/:id', obtenerDestileriaPublicaPorId);
 
-// Rutas privadas 
-router.post(
-  '/perfil',
-  authMiddleware,
-  verificarRol(ROL_DESTILERIA),
-  crearPerfil
-);
 
-router.get(
-  '/perfil',
-  authMiddleware,
-  verificarRol(ROL_DESTILERIA),
-  obtenerMiPerfil
-);
 
-router.put(
-  '/perfil',
-  authMiddleware,
-  verificarRol(ROL_DESTILERIA),
-  actualizarPerfil
-);
+// Rol ADMIN según la BD
+const ROL_ADMIN = 3;
 
-//Ruta pública 
-router.get(
-  '/:id',
-  obtenerPerfilPublico
-);
+// Middleware global:
+// 1. Verifica que el usuario esté autenticado
+// 2. Verifica que tenga rol ADMIN
+router.use(authMiddleware, verificarRol(ROL_ADMIN));
+
+// Crear una destilería
+router.post('/', crearDestileria);
+
+// Obtener todas las destilerías
+router.get('/', obtenerDestilerias);
+
+// Obtener una destilería por ID
+router.get('/:id', obtenerDestileriaPorId);
+
+// Actualizar una destilería
+router.put('/:id', actualizarDestileria);
+
+// Eliminar (desactivar) una destilería
+router.delete('/:id', eliminarDestileria);
+
+
+
 
 export default router;

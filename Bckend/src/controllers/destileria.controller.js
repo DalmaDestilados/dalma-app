@@ -1,119 +1,112 @@
 import Destileria from '../models/destileria.model.js';
 
-const ROL_DESTILERIA = 25; 
-
-// Crear perfil de destilería
-export const crearPerfil = async (req, res) => {
+// Crea una nueva destilería (solo ADMIN)
+export const crearDestileria = async (req, res) => {
   try {
-    const { id, rol } = req.usuario;
+    const { nombre_comercial } = req.body;
 
-    if (rol !== ROL_DESTILERIA) {
-      return res.status(403).json({ error: 'Acceso no permitido' });
-    }
-
-    const existePerfil = await Destileria.obtenerPorUsuario(id);
-    if (existePerfil) {
-      return res.status(400).json({ error: 'El perfil ya existe' });
-    }
-
-    const {
-      nombre_comercial,
-      descripcion,
-      email_contacto,
-      telefono,
-      direccion,
-      imagen_logo,
-      sitio_web
-    } = req.body;
-
+    // Validación mínima
     if (!nombre_comercial) {
       return res.status(400).json({ error: 'El nombre comercial es obligatorio' });
     }
 
-    const idPerfil = await Destileria.crearPerfil({
-      id_usuario: id,
-      nombre_comercial,
-      descripcion,
-      email_contacto,
-      telefono,
-      direccion,
-      imagen_logo,
-      sitio_web
-    });
+    const id = await Destileria.crear(req.body);
 
     res.status(201).json({
-      message: 'Perfil de destilería creado correctamente',
-      id_perfil_destileria: idPerfil
+      message: 'Destilería creada correctamente',
+      id_destileria: id
     });
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Error al crear perfil de destilería' });
+    res.status(500).json({ error: 'Error al crear destilería' });
   }
 };
 
-// Obtener mi perfil (destilería logueada)
-export const obtenerMiPerfil = async (req, res) => {
+// Obtiene todas las destilerías activas
+export const obtenerDestilerias = async (req, res) => {
   try {
-    const { id, rol } = req.usuario;
-
-    if (rol !== ROL_DESTILERIA) {
-      return res.status(403).json({ error: 'Acceso no permitido' });
-    }
-
-    const perfil = await Destileria.obtenerPorUsuario(id);
-
-    if (!perfil) {
-      return res.status(404).json({ error: 'Perfil no encontrado' });
-    }
-
-    res.json(perfil);
-
+    const destilerias = await Destileria.obtenerTodas();
+    res.json(destilerias);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error al obtener perfil' });
+    res.status(500).json({ error: 'Error al obtener destilerías' });
   }
 };
 
-// Actualizar mi perfil
-export const actualizarPerfil = async (req, res) => {
-  try {
-    const { id, rol } = req.usuario;
-
-    if (rol !== ROL_DESTILERIA) {
-      return res.status(403).json({ error: 'Acceso no permitido' });
-    }
-
-    const perfil = await Destileria.obtenerPorUsuario(id);
-    if (!perfil) {
-      return res.status(404).json({ error: 'Perfil no encontrado' });
-    }
-
-    await Destileria.actualizarPerfil(id, req.body);
-
-    res.json({ message: 'Perfil actualizado correctamente' });
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error al actualizar perfil' });
-  }
-};
-
-// Obtener perfil público
-export const obtenerPerfilPublico = async (req, res) => {
+// Obtiene una destilería específica por ID
+export const obtenerDestileriaPorId = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const perfil = await Destileria.obtenerPublico(id);
+    const destileria = await Destileria.obtenerPorId(id);
 
-    if (!perfil) {
-      return res.status(404).json({ error: 'Perfil no encontrado' });
+    if (!destileria) {
+      return res.status(404).json({ error: 'Destilería no encontrada' });
     }
 
-    res.json(perfil);
-
+    res.json(destileria);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error al obtener perfil público' });
+    res.status(500).json({ error: 'Error al obtener destilería' });
   }
 };
+
+// Actualiza los datos de una destilería existente
+export const actualizarDestileria = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const destileria = await Destileria.obtenerPorId(id);
+    if (!destileria) {
+      return res.status(404).json({ error: 'Destilería no encontrada' });
+    }
+
+    await Destileria.actualizar(id, req.body);
+
+    res.json({ message: 'Destilería actualizada correctamente' });
+
+  } catch (error) {
+    res.status(500).json({ error: 'Error al actualizar destilería' });
+  }
+};
+
+// Elimina una destilería de forma lógica (soft delete)
+export const eliminarDestileria = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await Destileria.desactivar(id);
+
+    res.json({ message: 'Destilería desactivada correctamente' });
+
+  } catch (error) {
+    res.status(500).json({ error: 'Error al eliminar destilería' });
+  }
+};
+
+// Obtener destilerías públicas (sin auth)
+export const obtenerDestileriasPublicas = async (req, res) => {
+  try {
+    const destilerias = await Destileria.obtenerTodas();
+    res.json(destilerias);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener destilerías públicas' });
+  }
+};
+
+// Obtener una destilería pública por ID
+export const obtenerDestileriaPublicaPorId = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const destileria = await Destileria.obtenerPorId(id);
+
+    if (!destileria) {
+      return res.status(404).json({ error: 'Destilería no encontrada' });
+    }
+
+    res.json(destileria);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener destilería pública' });
+  }
+};
+

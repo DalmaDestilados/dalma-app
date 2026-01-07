@@ -2,104 +2,112 @@ import pool from '../config/db.js';
 
 const Destileria = {
 
-  // Obtener perfil por usuario (destilería logueada)
-  async obtenerPorUsuario(id_usuario) {
-    const [rows] = await pool.query(
-      `SELECT *
-       FROM perfil_destileria
-       WHERE id_usuario = ?`,
-      [id_usuario]
-    );
-
-    return rows[0];
-  },
-
-  // Crear perfil de destilería
-  async crearPerfil(data) {
+  // Crea una nueva destilería en la base de datos
+  async crear(data) {
     const {
-      id_usuario,
       nombre_comercial,
       descripcion,
+      logo_url,
       email_contacto,
       telefono,
       direccion,
-      imagen_logo,
+      ciudad,
+      pais,
       sitio_web
     } = data;
 
     const [result] = await pool.query(
-      `INSERT INTO perfil_destileria
-       (id_usuario, nombre_comercial, descripcion, email_contacto, telefono, direccion, imagen_logo, sitio_web)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO destilerias
+       (nombre_comercial, descripcion, logo_url, email_contacto, telefono, direccion, ciudad, pais, sitio_web)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        id_usuario,
         nombre_comercial,
         descripcion,
+        logo_url,
         email_contacto,
         telefono,
         direccion,
-        imagen_logo,
+        ciudad,
+        pais,
         sitio_web
       ]
     );
 
+    // Retorna el ID de la destilería creada
     return result.insertId;
   },
 
-  // Actualizar perfil
-  async actualizarPerfil(id_usuario, data) {
+  // Obtiene todas las destilerías activas
+  async obtenerTodas() {
+    const [rows] = await pool.query(
+      `SELECT *
+       FROM destilerias
+       WHERE activo = 1
+       ORDER BY created_at DESC`
+    );
+    return rows;
+  },
+
+  // Obtiene una destilería activa por su ID
+  async obtenerPorId(id) {
+    const [rows] = await pool.query(
+      `SELECT *
+       FROM destilerias
+       WHERE id_destileria = ? AND activo = 1`,
+      [id]
+    );
+    return rows[0];
+  },
+
+  // Actualiza los datos de una destilería existente
+  async actualizar(id, data) {
     const {
       nombre_comercial,
       descripcion,
+      logo_url,
       email_contacto,
       telefono,
       direccion,
-      imagen_logo,
+      ciudad,
+      pais,
       sitio_web
     } = data;
 
     await pool.query(
-      `UPDATE perfil_destileria
+      `UPDATE destilerias
        SET nombre_comercial = ?,
            descripcion = ?,
+           logo_url = ?,
            email_contacto = ?,
            telefono = ?,
            direccion = ?,
-           imagen_logo = ?,
+           ciudad = ?,
+           pais = ?,
            sitio_web = ?
-       WHERE id_usuario = ?`,
+       WHERE id_destileria = ?`,
       [
         nombre_comercial,
         descripcion,
+        logo_url,
         email_contacto,
         telefono,
         direccion,
-        imagen_logo,
+        ciudad,
+        pais,
         sitio_web,
-        id_usuario
+        id
       ]
     );
   },
 
-  // Obtener perfil público
-  async obtenerPublico(id_perfil_destileria) {
-    const [rows] = await pool.query(
-      `SELECT
-          id_perfil_destileria,
-          nombre_comercial,
-          descripcion,
-          email_contacto,
-          telefono,
-          direccion,
-          imagen_logo,
-          sitio_web
-       FROM perfil_destileria
-       WHERE id_perfil_destileria = ?
-         AND activo = TRUE`,
-      [id_perfil_destileria]
+  // Desactiva una destilería (soft delete)
+  async desactivar(id) {
+    await pool.query(
+      `UPDATE destilerias
+       SET activo = 0
+       WHERE id_destileria = ?`,
+      [id]
     );
-
-    return rows[0];
   }
 
 };
