@@ -69,7 +69,7 @@ export const actualizarDestileria = async (req, res) => {
   }
 };
 
-// Elimina una destilería de forma lógica (soft delete)
+// oculta una destilería de forma lógica (soft delete)
 export const eliminarDestileria = async (req, res) => {
   try {
     const { id } = req.params;
@@ -82,6 +82,21 @@ export const eliminarDestileria = async (req, res) => {
     res.status(500).json({ error: 'Error al eliminar destilería' });
   }
 };
+
+// Vuelve a mostrar una destilería (ADMIN)
+export const mostrarDestileria = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await Destileria.mostrar(id);
+
+    res.json({ message: 'Destilería visible nuevamente' });
+
+  } catch (error) {
+    res.status(500).json({ error: 'Error al mostrar destilería' });
+  }
+};
+
 
 // Obtener destilerías públicas (sin auth)
 export const obtenerDestileriasPublicas = async (req, res) => {

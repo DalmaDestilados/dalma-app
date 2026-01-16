@@ -108,8 +108,20 @@ const Destileria = {
        WHERE id_destileria = ?`,
       [id]
     );
+  },
+  
+  // Vuelve a mostrar una destilería (reactivar)
+async mostrar(id) {
+  await pool.query(
+    `UPDATE destilerias
+     SET activo = 1
+     WHERE id_destileria = ?`,
+    [id]
+  );
   }
 
 };
+
+
 
 export default Destileria;

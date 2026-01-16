@@ -9,7 +9,8 @@ import {
   actualizarDestileria,
   eliminarDestileria,
   obtenerDestileriasPublicas,
-  obtenerDestileriaPublicaPorId
+  obtenerDestileriaPublicaPorId,
+  mostrarDestileria
 } from '../controllers/destileria.controller.js';
 
 const router = express.Router();
@@ -40,8 +41,11 @@ router.get('/:id', obtenerDestileriaPorId);
 // Actualizar una destilería
 router.put('/:id', actualizarDestileria);
 
-// Eliminar (desactivar) una destilería
+// oculta (desactivar) una destilería
 router.delete('/:id', eliminarDestileria);
+
+// vuelve a mostrar la destileria oculta
+router.patch('/:id/mostrar', mostrarDestileria);
 
 
 

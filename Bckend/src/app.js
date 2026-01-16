@@ -7,6 +7,8 @@ import destileriaRoutes from './routes/destileria.routes.js';
 import productoRoutes from './routes/producto.routes.js';
 import bartenderRoutes from './routes/bartender.routes.js';
 import coctelRoutes from './routes/coctel.routes.js';
+import favoritosRoutes from './routes/favoritos.routes.js';
+import deseosRoutes from './routes/deseos.routes.js';
 
 
 const app = express();
@@ -20,6 +22,8 @@ app.use('/api/destilerias', destileriaRoutes);
 app.use('/api/productos', productoRoutes);
 app.use('/api/bartenders', bartenderRoutes);
 app.use('/api/cocteles', coctelRoutes);
+app.use('/api/favoritos', favoritosRoutes);
+app.use('/api/deseos', deseosRoutes);
 
 
 
