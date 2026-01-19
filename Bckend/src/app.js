@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 
 import usuarioRoutes from './routes/usuario.routes.js';
 import authRoutes from './routes/auth.routes.js';
@@ -24,6 +25,7 @@ app.use('/api/bartenders', bartenderRoutes);
 app.use('/api/cocteles', coctelRoutes);
 app.use('/api/favoritos', favoritosRoutes);
 app.use('/api/deseos', deseosRoutes);
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 
 
