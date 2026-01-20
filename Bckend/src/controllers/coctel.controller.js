@@ -1,35 +1,72 @@
 import Coctel from '../models/coctel.model.js';
 import CoctelIngrediente from '../models/coctelIngrediente.model.js';
 
-const ROL_ADMIN = 3;
+const ROL_USUARIO = 1;
 const ROL_BARTENDER = 2;
+const ROL_ADMIN = 3;
 
-// Crear cóctel
+const LIMITES = {
+  [ROL_USUARIO]: 1,
+  DESTILERIA: 5,
+  [ROL_BARTENDER]: Infinity,
+  [ROL_ADMIN]: Infinity
+};
+
+//crear cocteles
+
 export const crearCoctel = async (req, res) => {
   try {
-    const { nombre, descripcion, ingredientes } = req.body;
-    const { rol, id } = req.usuario;
+    const {
+      nombre,
+      descripcion,
+      destilado_principal,
+      ingredientes
+    } = req.body;
 
-    if (!nombre || !ingredientes?.length) {
+    const {
+      rol,
+      id,
+      id_destileria,
+      id_bartender
+    } = req.usuario;
+
+    if (!nombre || !destilado_principal || !ingredientes?.length) {
       return res.status(400).json({
-        error: 'Nombre e ingredientes son obligatorios'
+        error: 'Nombre, destilado principal e ingredientes son obligatorios'
       });
     }
 
-    const data = { nombre, descripcion };
+    let total = 0;
+    const data = { nombre, descripcion, destilado_principal };
 
-    // Definir origen según rol
-    if (rol === ROL_BARTENDER) {
-      data.id_bartender = req.bartender.id_bartender;
-    } else if (rol === ROL_ADMIN && req.body.id_destileria) {
-      data.id_destileria = req.body.id_destileria;
-    } else {
+    if (rol === ROL_USUARIO) {
+      total = await Coctel.contarPorUsuario(id);
       data.id_usuario = id;
+    }
+
+    if (rol === ROL_BARTENDER) {
+      data.id_bartender = id_bartender;
+    }
+
+    if (rol === ROL_ADMIN) {
+      if (req.body.id_destileria) {
+        data.id_destileria = req.body.id_destileria;
+        total = await Coctel.contarPorDestileria(req.body.id_destileria);
+      } else {
+        return res.status(400).json({
+          error: 'ADMIN debe indicar id_destileria al crear un cóctel'
+        });
+      }
+    }
+
+    if (total >= (LIMITES[rol] ?? LIMITES.DESTILERIA)) {
+      return res.status(403).json({
+        error: 'Límite de cócteles alcanzado'
+      });
     }
 
     const id_coctel = await Coctel.crear(data);
 
-    // Guardar ingredientes
     for (const ing of ingredientes) {
       await CoctelIngrediente.agregar(
         id_coctel,
@@ -44,11 +81,13 @@ export const crearCoctel = async (req, res) => {
     });
 
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Error al crear cóctel' });
   }
 };
 
-// Obtener cócteles públicos
+//obtener cocteles publicos
+
 export const obtenerCoctelesPublicos = async (req, res) => {
   try {
     const cocteles = await Coctel.obtenerPublicos();
@@ -58,15 +97,20 @@ export const obtenerCoctelesPublicos = async (req, res) => {
   }
 };
 
-// Obtener cóctel con ingredientes
+//obtener perfil
+
 export const obtenerCoctelPorId = async (req, res) => {
   try {
-    const coctel = await Coctel.obtenerPorId(req.params.id);
+    const coctel = await Coctel.obtenerPublicoPorId(req.params.id);
+
     if (!coctel) {
       return res.status(404).json({ error: 'Cóctel no encontrado' });
     }
 
-    const ingredientes = await CoctelIngrediente.obtenerPorCoctel(coctel.id_coctel);
+    const ingredientes = await CoctelIngrediente.obtenerPorCoctel(
+      coctel.id_coctel
+    );
+
     res.json({ ...coctel, ingredientes });
 
   } catch {
@@ -74,7 +118,8 @@ export const obtenerCoctelPorId = async (req, res) => {
   }
 };
 
-// Actualizar cóctel
+//actualizar coctel
+
 export const actualizarCoctel = async (req, res) => {
   try {
     const { rol, id } = req.usuario;
@@ -84,11 +129,7 @@ export const actualizarCoctel = async (req, res) => {
       return res.status(404).json({ error: 'Cóctel no encontrado' });
     }
 
-    // Validar permisos
-    if (
-      rol !== ROL_ADMIN &&
-      coctel.id_usuario !== id
-    ) {
+    if (rol !== ROL_ADMIN && coctel.id_usuario !== id) {
       return res.status(403).json({ error: 'No autorizado' });
     }
 
@@ -112,7 +153,8 @@ export const actualizarCoctel = async (req, res) => {
   }
 };
 
-// Eliminar cóctel (ADMIN)
+//eliminar coctel
+
 export const eliminarCoctel = async (req, res) => {
   try {
     await Coctel.desactivar(req.params.id);

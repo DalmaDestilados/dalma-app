@@ -1,11 +1,19 @@
 import Producto from '../models/producto.model.js';
 
-// Crear un producto (solo ADMIN)
+//Admin
+
+// Crear producto
 export const crearProducto = async (req, res) => {
   try {
-    const { nombre, precio, id_destileria } = req.body;
+    const {
+      nombre,
+      descripcion,
+      precio,
+      stock,
+      grado_alcoholico,
+      id_destileria
+    } = req.body;
 
-    // Validaciones mínimas
     if (!nombre || !precio || !id_destileria) {
       return res.status(400).json({
         error: 'Nombre, precio e id_destileria son obligatorios'
@@ -20,12 +28,11 @@ export const crearProducto = async (req, res) => {
     });
 
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: 'Error al crear producto' });
   }
 };
 
-// Obtener todos los productos
+// Obtener todos los productos (admin)
 export const obtenerProductos = async (req, res) => {
   try {
     const productos = await Producto.obtenerTodos();
@@ -35,11 +42,10 @@ export const obtenerProductos = async (req, res) => {
   }
 };
 
-// Obtener producto por ID
+// Obtener producto por ID (admin)
 export const obtenerProductoPorId = async (req, res) => {
   try {
     const { id } = req.params;
-
     const producto = await Producto.obtenerPorId(id);
 
     if (!producto) {
@@ -52,11 +58,10 @@ export const obtenerProductoPorId = async (req, res) => {
   }
 };
 
-// Obtener productos por destilería
+// Obtener productos por destilería (admin)
 export const obtenerProductosPorDestileria = async (req, res) => {
   try {
     const { id_destileria } = req.params;
-
     const productos = await Producto.obtenerPorDestileria(id_destileria);
     res.json(productos);
   } catch (error) {
@@ -68,8 +73,8 @@ export const obtenerProductosPorDestileria = async (req, res) => {
 export const actualizarProducto = async (req, res) => {
   try {
     const { id } = req.params;
-
     const producto = await Producto.obtenerPorId(id);
+
     if (!producto) {
       return res.status(404).json({ error: 'Producto no encontrado' });
     }
@@ -77,30 +82,28 @@ export const actualizarProducto = async (req, res) => {
     await Producto.actualizar(id, req.body);
 
     res.json({ message: 'Producto actualizado correctamente' });
-
   } catch (error) {
     res.status(500).json({ error: 'Error al actualizar producto' });
   }
 };
 
-// Eliminar producto (soft delete)
+// Desactivar producto
 export const eliminarProducto = async (req, res) => {
   try {
     const { id } = req.params;
-
     await Producto.desactivar(id);
-
     res.json({ message: 'Producto desactivado correctamente' });
-
   } catch (error) {
     res.status(500).json({ error: 'Error al eliminar producto' });
   }
 };
 
+//publico
+
 // Obtener productos públicos
 export const obtenerProductosPublicos = async (req, res) => {
   try {
-    const productos = await Producto.obtenerTodos();
+    const productos = await Producto.obtenerPublicos();
     res.json(productos);
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener productos públicos' });
@@ -111,8 +114,7 @@ export const obtenerProductosPublicos = async (req, res) => {
 export const obtenerProductoPublicoPorId = async (req, res) => {
   try {
     const { id } = req.params;
-
-    const producto = await Producto.obtenerPorId(id);
+    const producto = await Producto.obtenerPublicoPorId(id);
 
     if (!producto) {
       return res.status(404).json({ error: 'Producto no encontrado' });
@@ -128,11 +130,9 @@ export const obtenerProductoPublicoPorId = async (req, res) => {
 export const obtenerProductosPublicosPorDestileria = async (req, res) => {
   try {
     const { id_destileria } = req.params;
-
-    const productos = await Producto.obtenerPorDestileria(id_destileria);
+    const productos = await Producto.obtenerPublicosPorDestileria(id_destileria);
     res.json(productos);
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener productos públicos' });
   }
 };
-

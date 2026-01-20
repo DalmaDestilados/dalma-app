@@ -133,7 +133,7 @@ router.post(
         });
       }
 
-      // 1️⃣ Buscar logo actual
+      // Buscar logo actual
       const [rows] = await pool.query(
         'SELECT logo_url FROM destilerias WHERE id_destileria = ?',
         [id]
@@ -142,16 +142,16 @@ router.post(
       if (rows.length > 0 && rows[0].logo_url) {
         const oldPath = path.join(process.cwd(), rows[0].logo_url);
 
-        // 2️⃣ Borrar archivo anterior si existe
+        // Borrar archivo anterior si existe
         if (fs.existsSync(oldPath)) {
           fs.unlinkSync(oldPath);
         }
       }
 
-      // 3️⃣ Guardar nuevo logo
+      //  Guardar nuevo logo
       const logoUrl = req.file.path.replace(/\\/g, '/');
 
-      // 4️⃣ Actualizar BD
+      // Actualizar BD
       await pool.query(
         'UPDATE destilerias SET logo_url = ? WHERE id_destileria = ?',
         [logoUrl, id]

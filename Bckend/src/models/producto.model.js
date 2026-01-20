@@ -1,105 +1,118 @@
 import pool from '../config/db.js';
 
-const Producto = {
+class Producto {
 
-  // Crear un producto asociado a una destilería
-  async crear(data) {
-    const {
-      nombre,
-      descripcion,
-      categoria,
-      precio,
-      stock,
-      grado_alcoholico,
-      contenido_neto,
-      id_destileria
-    } = data;
+  //admin
 
+  static async crear(data) {
     const [result] = await pool.query(
-      `INSERT INTO productos
-       (nombre, descripcion, categoria, precio, stock, grado_alcoholico, contenido_neto, id_destileria)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        nombre,
-        descripcion,
-        categoria,
-        precio,
-        stock,
-        grado_alcoholico,
-        contenido_neto,
-        id_destileria
-      ]
+      `INSERT INTO productos SET ?`,
+      [data]
     );
-
     return result.insertId;
-  },
+  }
 
-  // Obtener todos los productos activos
-  async obtenerTodos() {
+  static async obtenerTodos() {
     const [rows] = await pool.query(
-      `SELECT *
-       FROM productos
-       WHERE activo = 1
-       ORDER BY created_at DESC`
+      'SELECT * FROM productos'
     );
     return rows;
-  },
+  }
 
-  // Obtener un producto por ID
-  async obtenerPorId(id) {
+  static async obtenerPorId(id) {
     const [rows] = await pool.query(
-      `SELECT *
-       FROM productos
-       WHERE id_producto = ? AND activo = 1`,
+      'SELECT * FROM productos WHERE id_producto = ?',
       [id]
     );
-    return rows[0];
-  },
+    return rows[0] || null;
+  }
 
-  // Obtener productos por destilería
-  async obtenerPorDestileria(id_destileria) {
+  static async obtenerPorDestileria(id_destileria) {
     const [rows] = await pool.query(
-      `SELECT *
-       FROM productos
-       WHERE id_destileria = ? AND activo = 1`,
+      'SELECT * FROM productos WHERE id_destileria = ?',
       [id_destileria]
     );
     return rows;
-  },
+  }
 
-  // Actualizar producto (UPDATE parcial)
-  async actualizar(id, data) {
-    const campos = [];
-    const valores = [];
-
-    for (const [key, value] of Object.entries(data)) {
-      campos.push(`${key} = ?`);
-      valores.push(value);
-    }
-
-    if (campos.length === 0) return;
-
-    valores.push(id);
-
-    const sql = `
-      UPDATE productos
-      SET ${campos.join(', ')}
-      WHERE id_producto = ?
-    `;
-
-    await pool.query(sql, valores);
-  },
-
-  // Eliminado lógico del producto
-  async desactivar(id) {
+  static async actualizar(id, data) {
     await pool.query(
-      `UPDATE productos
-       SET activo = 0
-       WHERE id_producto = ?`,
+      'UPDATE productos SET ? WHERE id_producto = ?',
+      [data, id]
+    );
+  }
+
+  static async desactivar(id) {
+    await pool.query(
+      'UPDATE productos SET activo = 0 WHERE id_producto = ?',
       [id]
     );
   }
 
-};
+  //publico
+
+  static async obtenerPublicos() {
+    const [rows] = await pool.query(`
+      SELECT 
+        p.id_producto,
+        p.nombre,
+        p.descripcion,
+        p.precio,
+        p.grado_alcoholico,
+        p.imagen_url,
+        p.id_destileria
+      FROM productos p
+      INNER JOIN destilerias d
+        ON p.id_destileria = d.id_destileria
+      WHERE p.activo = 1
+        AND d.activo = 1
+      ORDER BY p.created_at DESC
+    `);
+    return rows;
+  }
+
+  static async obtenerPublicoPorId(id) {
+    const [rows] = await pool.query(`
+      SELECT 
+        p.id_producto,
+        p.nombre,
+        p.descripcion,
+        p.precio,
+        p.grado_alcoholico,
+        p.imagen_url,
+        p.id_destileria
+      FROM productos p
+      INNER JOIN destilerias d
+        ON p.id_destileria = d.id_destileria
+      WHERE p.id_producto = ?
+        AND p.activo = 1
+        AND d.activo = 1
+      LIMIT 1
+    `, [id]);
+
+    return rows[0] || null;
+  }
+
+  static async obtenerPublicosPorDestileria(id_destileria) {
+    const [rows] = await pool.query(`
+      SELECT 
+        p.id_producto,
+        p.nombre,
+        p.descripcion,
+        p.precio,
+        p.grado_alcoholico,
+        p.imagen_url
+      FROM productos p
+      INNER JOIN destilerias d
+        ON p.id_destileria = d.id_destileria
+      WHERE p.id_destileria = ?
+        AND p.activo = 1
+        AND d.activo = 1
+      ORDER BY p.created_at DESC
+    `, [id_destileria]);
+
+    return rows;
+  }
+}
 
 export default Producto;
