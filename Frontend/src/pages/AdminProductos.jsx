@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+
 export default function AdminProductos() {
   const [productos, setProductos] = useState([]);
   const [form, setForm] = useState({
@@ -16,7 +18,7 @@ export default function AdminProductos() {
   const [error, setError] = useState("");
   const [editingId, setEditingId] = useState(null);
 
-  const API_URL = "http://localhost:3001/api/productos";
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
     fetchProductos();
@@ -24,12 +26,20 @@ export default function AdminProductos() {
 
   async function fetchProductos() {
     try {
-      const res = await fetch(API_URL, { credentials: "include" });
+      const res = await fetch(`${API_BASE}/api/productos`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) throw new Error("No autorizado");
+
       const data = await res.json();
-      setProductos(data);
+      setProductos(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
-      setError("No se pudieron cargar los productos");
+      setError("No se pudieron cargar los productos (admin)");
+      setProductos([]);
     }
   }
 
@@ -39,30 +49,23 @@ export default function AdminProductos() {
     setError("");
 
     try {
-      let res, data;
-      if (editingId) {
-        // EDITAR
-        res = await fetch(`${API_URL}/${editingId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
+      const res = await fetch(
+        editingId
+          ? `${API_BASE}/api/productos/${editingId}`
+          : `${API_BASE}/api/productos`,
+        {
+          method: editingId ? "PUT" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify(form),
-        });
-        if (!res.ok) throw new Error("Error al actualizar producto");
-        data = await res.json();
-        setProductos(productos.map(p => (p.id_producto === editingId ? data : p)));
-      } else {
-        // CREAR
-        res = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(form),
-        });
-        if (!res.ok) throw new Error("Error al crear producto");
-        data = await res.json();
-        setProductos([data, ...productos]);
-      }
+        }
+      );
+
+      if (!res.ok) throw new Error("Error al guardar producto");
+
+      await fetchProductos();
 
       setForm({
         nombre: "",
@@ -99,9 +102,17 @@ export default function AdminProductos() {
 
   async function handleDelete(id) {
     if (!window.confirm("¿Seguro que quieres eliminar este producto?")) return;
+
     try {
-      const res = await fetch(`${API_URL}/${id}`, { method: "DELETE", credentials: "include" });
-      if (!res.ok) throw new Error(`Error ${res.status}`);
+      const res = await fetch(`${API_BASE}/api/productos/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) throw new Error("Error al eliminar producto");
+
       setProductos(productos.filter(p => p.id_producto !== id));
     } catch (err) {
       console.error(err);
@@ -115,34 +126,116 @@ export default function AdminProductos() {
   }
 
   return (
-    <div style={{ padding: 20 }}>
+    <div className="admin-wrap">
       <h2>Administrar Productos</h2>
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {error && <p className="admin-error">{error}</p>}
 
-      <form onSubmit={handleSave} style={{ marginBottom: 20, display: "flex", flexDirection: "column", gap: 10 }}>
-        <input type="text" name="nombre" placeholder="Nombre" value={form.nombre} onChange={handleChange} required />
-        <input type="text" name="descripcion" placeholder="Descripción" value={form.descripcion} onChange={handleChange} />
-        <input type="text" name="categoria" placeholder="Categoría" value={form.categoria} onChange={handleChange} />
-        <input type="number" name="precio" placeholder="Precio" value={form.precio} onChange={handleChange} />
-        <input type="number" name="stock" placeholder="Stock" value={form.stock} onChange={handleChange} />
-        <input type="number" name="grado_alcoholico" placeholder="Grado alcohólico (%)" value={form.grado_alcoholico} onChange={handleChange} />
-        <input type="number" name="contenido_neto" placeholder="Contenido neto (ml)" value={form.contenido_neto} onChange={handleChange} />
-        <input type="number" name="id_destileria" placeholder="ID Destilería" value={form.id_destileria} onChange={handleChange} />
-        <button type="submit" disabled={loading}>{loading ? "Guardando..." : editingId ? "Actualizar producto" : "Guardar producto"}</button>
+      {/* FORM */}
+      <form className="admin-form" onSubmit={handleSave}>
+        {Object.keys(form).map((key) => (
+          <input
+            key={key}
+            type={key.includes("precio") || key.includes("stock") ? "number" : "text"}
+            name={key}
+            placeholder={key.replace("_", " ")}
+            value={form[key]}
+            onChange={handleChange}
+          />
+        ))}
+
+        <button type="submit" disabled={loading}>
+          {loading ? "Guardando..." : editingId ? "Actualizar producto" : "Crear producto"}
+        </button>
       </form>
 
-      <h3>Lista de Productos</h3>
-      <ul style={{ listStyle: "none", padding: 0 }}>
+      {/* LISTA */}
+      <div className="admin-grid">
         {productos.map(p => (
-          <li key={p.id_producto} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, padding: 10, border: "1px solid #ccc", borderRadius: 6 }}>
-            <span>{p.nombre} - {p.categoria} - ${Number(p.precio).toLocaleString()}</span>
-            <div style={{ display: "flex", gap: 6 }}>
-              <button onClick={() => handleEdit(p)} style={{ background: "#f0ad4e", color: "#fff", border: "none", borderRadius: 4, padding: "4px 8px", cursor: "pointer" }}>Editar</button>
-              <button onClick={() => handleDelete(p.id_producto)} style={{ background: "red", color: "#fff", border: "none", borderRadius: 4, padding: "4px 8px", cursor: "pointer" }}>Eliminar</button>
+          <div key={p.id_producto} className="admin-card">
+            <strong>{p.nombre}</strong>
+            <span>{p.categoria}</span>
+            <span>${Number(p.precio).toLocaleString()}</span>
+
+            <div className="admin-actions">
+              <button onClick={() => handleEdit(p)}>Editar</button>
+              <button className="danger" onClick={() => handleDelete(p.id_producto)}>
+                Eliminar
+              </button>
             </div>
-          </li>
+          </div>
         ))}
-      </ul>
+      </div>
+
+      {/* CSS */}
+      <style>{`
+        .admin-wrap {
+          max-width: 1100px;
+          margin: 0 auto;
+          padding: 24px;
+        }
+
+        .admin-error {
+          color: red;
+          margin-bottom: 12px;
+        }
+
+        .admin-form {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          gap: 10px;
+          margin-bottom: 30px;
+        }
+
+        .admin-form input {
+          padding: 10px;
+          border-radius: 8px;
+          border: 1px solid #ccc;
+        }
+
+        .admin-form button {
+          grid-column: 1 / -1;
+          padding: 12px;
+          border-radius: 999px;
+          border: none;
+          background: #f28c28;
+          font-weight: 900;
+          cursor: pointer;
+        }
+
+        .admin-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+          gap: 16px;
+        }
+
+        .admin-card {
+          border: 1px solid #ddd;
+          border-radius: 14px;
+          padding: 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .admin-actions {
+          display: flex;
+          gap: 6px;
+          margin-top: 8px;
+        }
+
+        .admin-actions button {
+          flex: 1;
+          border: none;
+          padding: 6px;
+          border-radius: 6px;
+          cursor: pointer;
+        }
+
+        .admin-actions .danger {
+          background: #e74c3c;
+          color: #fff;
+        }
+      `}</style>
     </div>
   );
 }

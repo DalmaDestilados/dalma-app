@@ -1,54 +1,25 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
-/* ===== IMÁGENES LOCALES ===== */
-import ginImg from "../assets/Productos/Gin.jpg";
-import piscoImg from "../assets/Productos/Pisco.jpg";
-import ronImg from "../assets/Productos/Ron.jpg";
-import tequilaImg from "../assets/Productos/Tequila.jpg";
-import vodkaImg from "../assets/Productos/Vodka.jpg";
-import whiskyImg from "../assets/Productos/Whisky.jpg";
-
-/* ===== MAPA CATEGORÍA → IMAGEN ===== */
-const productImages = {
-  gin: ginImg,
-  pisco: piscoImg,
-  ron: ronImg,
-  tequila: tequilaImg,
-  vodka: vodkaImg,
-  whisky: whiskyImg,
-};
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
 export default function ProductList() {
-  const { producerId } = useParams(); // opcional
-  const navigate = useNavigate();
-
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const API_URL = "http://localhost:3001/api/productos";
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchProductos();
-  }, [producerId]);
+  }, []);
 
   async function fetchProductos() {
     try {
-      const res = await fetch(API_URL, { credentials: "include" });
-      if (!res.ok) throw new Error("No se pudieron cargar los productos");
-
-      let data = await res.json();
-
-      // filtrar por destilería si viene desde ProducerDetail
-      if (producerId) {
-        data = data.filter(
-          (p) => String(p.id_destileria) === String(producerId)
-        );
-      }
-
+      const res = await fetch(`${API_BASE}/api/productos/public`);
+      if (!res.ok) throw new Error("Error al cargar productos");
+      const data = await res.json();
       setProductos(data);
-      setError("");
     } catch (err) {
       console.error(err);
       setError("No se pudieron cargar los productos");
@@ -57,51 +28,49 @@ export default function ProductList() {
     }
   }
 
-  if (loading) return <p className="pl-loading">Cargando productos…</p>;
+  if (loading) return <p className="pl-loading">Cargando productos...</p>;
   if (error) return <p className="pl-error">{error}</p>;
 
   return (
     <div className="pl-wrap">
-      <h2 className="pl-title">Nuestros productos</h2>
+      <h2 className="pl-title">Productos</h2>
 
       {productos.length === 0 && (
         <p className="pl-empty">No hay productos disponibles.</p>
       )}
 
       <div className="pl-grid">
-        {productos.map((p) => {
-          const img =
-            productImages[p.categoria?.toLowerCase()] || piscoImg;
+        {productos.map((p) => (
+          <div
+            key={p.id_producto}
+            className="pl-card"
+            onClick={() => navigate(`/productos/${p.id_producto}`)}
+          >
+            <img
+              src={
+                p.imagen_url
+                  ? `${API_BASE}/${p.imagen_url}`
+                  : "https://via.placeholder.com/300x400?text=Sin+Imagen"
+              }
+              alt={p.nombre}
+            />
 
-          return (
-            <div
-              key={p.id_producto}
-              className="pl-card"
-              onClick={() => navigate(`/productos/${p.id_producto}`)}
-            >
-              <img src={img} alt={p.nombre} />
-
-              <div className="pl-card-body">
-                <h3>{p.nombre}</h3>
-                <p className="pl-category">{p.categoria}</p>
-
-                <div className="pl-meta">
-                  <span>{p.contenido_neto} ml</span>
-                  <span>{p.grado_alcoholico}°</span>
-                </div>
-
-                <div className="pl-price">
-                  ${Number(p.precio).toLocaleString("es-CL")}
-                </div>
-
-                <span className="pl-cta">Ver producto →</span>
+            <div className="pl-card-body">
+              <h3>{p.nombre}</h3>
+              <div className="pl-meta">
+                <span>{p.grado_alcoholico}% abv</span>
+                <span>{p.contenido_neto} cc</span>
               </div>
+              <div className="pl-price">
+                ${Number(p.precio).toLocaleString("es-CL")}
+              </div>
+              <span className="pl-cta">Ver producto →</span>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
 
-      {/* ===== ESTILOS ===== */}
+      {/* ===== ESTILOS (SE USAN DE VERDAD AHORA) ===== */}
       <style>{`
         .pl-wrap {
           max-width: 1100px;
@@ -163,25 +132,19 @@ export default function ProductList() {
           font-weight: 800;
         }
 
-        .pl-category {
-          font-size: 13px;
-          color: #666;
-          margin: 4px 0 10px;
-        }
-
         .pl-meta {
           display: flex;
           justify-content: space-between;
           font-size: 13px;
           color: #555;
-          margin-bottom: 10px;
+          margin: 6px 0;
         }
 
         .pl-price {
           font-size: 18px;
           font-weight: 900;
           color: #111;
-          margin-bottom: 8px;
+          margin-bottom: 6px;
         }
 
         .pl-cta {

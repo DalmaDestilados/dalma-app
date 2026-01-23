@@ -6,43 +6,41 @@ export const useAuth = () => useContext(AuthContext);
 
 const API = "http://localhost:3001/api/auth";
 
-let isLogging = false;
-let isGettingMe = false;
-
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [booting, setBooting] = useState(true);
   const [isAuthed, setIsAuthed] = useState(false);
 
-  const [isResetting, setIsResetting] = useState(false);
-
+  // Axios configurado para JWT
   const api = axios.create({
     baseURL: API,
-    withCredentials: true,
   });
 
+  // 👉 Agregar token automáticamente
+  api.interceptors.request.use((config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  });
+
+  // Obtener usuario autenticado
   async function getMe() {
-    if (isGettingMe) return user;
-
     try {
-      isGettingMe = true;
-
       const res = await api.get("/me");
-      const usuario = res.data?.user || null;
-
-      if (usuario) {
-        setUser(usuario);
-        setIsAuthed(true);
-      }
-
-      return usuario;
+      setUser(res.data.user);
+      setIsAuthed(true);
+      return res.data.user;
     } catch {
+      localStorage.removeItem("token");
+      setUser(null);
+      setIsAuthed(false);
       return null;
-    } finally {
-      isGettingMe = false;
     }
   }
 
+  // Al cargar la app
   useEffect(() => {
     (async () => {
       await getMe();
@@ -50,115 +48,54 @@ export function AuthProvider({ children }) {
     })();
   }, []);
 
+  // Login
   async function login(form) {
-    if (isLogging) return;
-    isLogging = true;
+    const res = await api.post("/login", {
+      email: form.email,
+      password: form.password,
+    });
 
-    try {
-      const res = await api.post("/login", {
-        email: form.email,
-        password: form.password,
-      });
+    // 👉 Guardar JWT
+    localStorage.setItem("token", res.data.token);
 
-      const usuario = res.data?.user || null;
+    setUser(res.data.usuario);
+    setIsAuthed(true);
 
-      if (usuario) {
-        setUser(usuario);
-        setIsAuthed(true);
-      }
-
-      return usuario;
-    } catch (err) {
-      throw new Error(err.response?.data?.message || "Credenciales incorrectas");
-    } finally {
-      isLogging = false;
-    }
+    return res.data.usuario;
   }
 
-  // 🔥 AQUÍ ESTABA EL ERROR REAL
+  // Registro (según tu backend)
   async function register(form) {
-    try {
-      const payload = {
-        nombre: form.nombre,
-        email: form.email,
-        password: form.password,
-        fecha_nacimiento: form.fecha_nacimiento,
-        acepta_terminos: true, // 🔒 backend exige confirmación
-      };
+    const payload = {
+      nombre: form.nombre,
+      email: form.email,
+      password: form.password,
+      edad: form.edad,
+      telefono: form.telefono,
+      rol: form.rol,
+    };
 
-      const res = await api.post("/register", payload);
-      return res.data;
-    } catch (err) {
-      throw new Error(err.response?.data?.message || "Error al registrar");
-    }
+    const res = await api.post("/register", payload);
+    return res.data;
   }
 
-  async function logout() {
-    await api.post("/logout");
+  // Logout (frontend)
+  function logout() {
+    localStorage.removeItem("token");
     setUser(null);
     setIsAuthed(false);
-  }
-
-  async function verifyEmail({ email, token }) {
-    try {
-      const res = await api.post("/verify-email", { email, token });
-      return (
-        res.data?.message ||
-        "Correo verificado correctamente. Ya puedes iniciar sesión."
-      );
-    } catch (err) {
-      throw new Error(
-        err.response?.data?.message || "No se pudo verificar el correo."
-      );
-    }
-  }
-
-  async function forgotPassword(email) {
-    try {
-      const res = await api.post("/forgot-password", { email });
-      return res.data?.message;
-    } catch (err) {
-      throw new Error(
-        err.response?.data?.message || "No se pudo enviar el correo"
-      );
-    }
-  }
-
-  async function resetPassword(data) {
-    if (isResetting) return;
-    setIsResetting(true);
-
-    try {
-      const res = await api.post("/reset-password", data);
-      return res.data?.message;
-    } catch (err) {
-      if (err.response?.status === 429) {
-        throw new Error(
-          "Has enviado muchas solicitudes. Espera unos segundos antes de intentar nuevamente."
-        );
-      }
-      throw new Error(
-        err.response?.data?.message || "No se pudo cambiar contraseña"
-      );
-    } finally {
-      setIsResetting(false);
-    }
   }
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        usuarios: user,
         isAuthed,
         booting,
         login,
         register,
         logout,
         getMe,
-        verifyEmail,
-        forgotPassword,
-        resetPassword,
       }}
     >
       {children}

@@ -2,7 +2,12 @@ import React, { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext.jsx";
 
-export default function Header({ searchTerm, setSearchTerm, category, setCategory }) {
+export default function Header({
+  searchTerm,
+  setSearchTerm,
+  category,
+  setCategory,
+}) {
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -26,13 +31,13 @@ export default function Header({ searchTerm, setSearchTerm, category, setCategor
     if (!isHome) navigate("/home");
   }
 
-  const userEmail = user?.email || user?.correo;
-  const mostrarBotonAdmin = !booting && userEmail === "admin@dalma.com";
+  
+  const esAdmin = !booting && user?.rol === 3;
 
   return (
     <>
+      {/* ================= HEADER ================= */}
       <header className="dalma-header">
-        {/* LOGO */}
         <div className="dalma-logo" onClick={() => go("/home")}>
           <svg viewBox="0 0 400 120" aria-label="Dalma logo">
             <text
@@ -60,7 +65,7 @@ export default function Header({ searchTerm, setSearchTerm, category, setCategor
         </div>
       </header>
 
-      {/* BUSCADOR */}
+      {/* ================= SEARCH BAR ================= */}
       <div className="dalma-search-wrap">
         <button className="dalma-burger" onClick={() => setOpen(true)}>
           <span />
@@ -81,17 +86,26 @@ export default function Header({ searchTerm, setSearchTerm, category, setCategor
 
       {open && <div className="dalma-overlay" onClick={() => setOpen(false)} />}
 
+      {/* ================= DRAWER ================= */}
       <aside className={`dalma-drawer ${open ? "open" : ""}`}>
         <button onClick={() => go("/home")}>🏠 Inicio</button>
         <button onClick={() => go("/productores")}>🏭 Destilerías</button>
         <button onClick={() => go("/productos")}>🧴 Productos</button>
 
-        {mostrarBotonAdmin && (
+        {/* ===== BOTONES ADMIN ===== */}
+        {esAdmin && (
           <>
-            <button className="dalma-admin-btn" onClick={() => go("/admin/destilerias")}>
+            <button
+              className="dalma-admin-btn"
+              onClick={() => go("/admin/destilerias")}
+            >
               🛠️ Gestionar Destilerías
             </button>
-            <button className="dalma-admin-btn" onClick={() => go("/admin/productos")}>
+
+            <button
+              className="dalma-admin-btn"
+              onClick={() => go("/admin/productos")}
+            >
               🛠️ Gestionar Productos
             </button>
           </>
@@ -99,13 +113,16 @@ export default function Header({ searchTerm, setSearchTerm, category, setCategor
 
         <button onClick={() => go("/profile")}>👤 Perfil</button>
 
+        {/* ================= CATEGORÍAS ================= */}
         <div className="dalma-drawer-categories">
           <strong>Categorías</strong>
           {categories.map((c) => (
             <button
               key={c}
               onClick={() => pickCategory(c)}
-              className={`dalma-cat-btn ${category === c ? "active" : ""}`}
+              className={`dalma-cat-btn ${
+                category === c ? "active" : ""
+              }`}
             >
               {c}
             </button>
@@ -113,10 +130,8 @@ export default function Header({ searchTerm, setSearchTerm, category, setCategor
         </div>
       </aside>
 
+      {/* ================= STYLES ================= */}
       <style>{`
-/* =========================
-   HEADER
-========================= */
 .dalma-header {
   background: #000;
   padding: 18px 0 12px;
@@ -130,14 +145,6 @@ export default function Header({ searchTerm, setSearchTerm, category, setCategor
   cursor: pointer;
 }
 
-.dalma-logo svg {
-  width: 100%;
-  height: auto;
-}
-
-/* =========================
-   SEARCH BAR
-========================= */
 .dalma-search-wrap {
   display: grid;
   grid-template-columns: 42px 1fr;
@@ -158,40 +165,20 @@ export default function Header({ searchTerm, setSearchTerm, category, setCategor
   align-items: center;
   gap: 4px;
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.1s ease;
-}
-
-.dalma-burger:hover {
-  background: #f2f2f2;
-}
-
-.dalma-burger:active {
-  transform: scale(0.96);
 }
 
 .dalma-burger span {
   width: 18px;
   height: 2px;
   background: #000;
-  border-radius: 999px;
 }
 
-/* =========================
-   SEARCH INPUT
-========================= */
 .dalma-search {
   background: #f5e3d3;
   border-radius: 14px;
   padding: 12px 14px;
   display: flex;
-  align-items: center;
   gap: 10px;
-  border-bottom: 2px solid #000;
-}
-
-.dalma-search-ico {
-  font-size: 18px;
-  color: #f28c28;
 }
 
 .dalma-search input {
@@ -200,17 +187,8 @@ export default function Header({ searchTerm, setSearchTerm, category, setCategor
   outline: none;
   background: transparent;
   font-size: 15px;
-  font-weight: 600;
-  color: #111;
 }
 
-.dalma-search input::placeholder {
-  color: rgba(0,0,0,0.55);
-}
-
-/* =========================
-   OVERLAY
-========================= */
 .dalma-overlay {
   position: fixed;
   inset: 0;
@@ -218,9 +196,6 @@ export default function Header({ searchTerm, setSearchTerm, category, setCategor
   z-index: 90;
 }
 
-/* =========================
-   DRAWER
-========================= */
 .dalma-drawer {
   position: fixed;
   top: 0;
@@ -250,23 +225,14 @@ export default function Header({ searchTerm, setSearchTerm, category, setCategor
   font-weight: 700;
   text-align: left;
   cursor: pointer;
-  transition: background 0.15s ease;
 }
 
-.dalma-drawer button:hover {
-  background: rgba(255,255,255,0.12);
-}
-
-/* ADMIN */
 .dalma-admin-btn {
   background: #f28c28 !important;
   color: #111 !important;
   font-weight: 900;
 }
 
-/* =========================
-   CATEGORIES
-========================= */
 .dalma-drawer-categories {
   margin-top: 14px;
   display: flex;
@@ -275,16 +241,10 @@ export default function Header({ searchTerm, setSearchTerm, category, setCategor
   color: #fff;
 }
 
-.dalma-drawer-categories strong {
-  font-size: 13px;
-  opacity: 0.7;
-}
-
 .dalma-cat-btn {
   background: rgba(255,255,255,0.08);
   border-radius: 999px;
   padding: 8px 12px;
-  font-size: 13px;
   border: none;
   color: #fff;
   cursor: pointer;
@@ -295,8 +255,7 @@ export default function Header({ searchTerm, setSearchTerm, category, setCategor
   color: #111;
   font-weight: 900;
 }
-`}</style>
-
+      `}</style>
     </>
   );
 }

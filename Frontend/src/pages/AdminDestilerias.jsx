@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { apiFetch } from "../api";
 
 export default function AdminDestilerias() {
   const [destilerias, setDestilerias] = useState([]);
@@ -16,9 +17,7 @@ export default function AdminDestilerias() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [editingId, setEditingId] = useState(null); // <-- para editar
-
-  const API_URL = "http://localhost:3001/api/destilerias";
+  const [editingId, setEditingId] = useState(null);
 
   useEffect(() => {
     fetchDestilerias();
@@ -26,12 +25,10 @@ export default function AdminDestilerias() {
 
   async function fetchDestilerias() {
     try {
-      const res = await fetch(API_URL, { credentials: "include" });
-      const data = await res.json();
+      const data = await apiFetch("/destilerias");
       setDestilerias(data);
-    } catch (err) {
-      console.error(err);
-      setError("No se pudieron cargar las destilerías");
+    } catch {
+      setError("No se pudieron cargar las destilerías (¿rol admin?)");
     }
   }
 
@@ -41,32 +38,20 @@ export default function AdminDestilerias() {
     setError("");
 
     try {
-      let res, data;
       if (editingId) {
-        // EDITAR
-        res = await fetch(`${API_URL}/${editingId}`, {
+        await apiFetch(`/destilerias/${editingId}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
           body: JSON.stringify(form),
         });
-        if (!res.ok) throw new Error("Error al actualizar destilería");
-        data = await res.json();
-        setDestilerias(destilerias.map(d => (d.id_destileria === editingId ? data : d)));
       } else {
-        // CREAR
-        res = await fetch(API_URL, {
+        await apiFetch("/destilerias", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
           body: JSON.stringify(form),
         });
-        if (!res.ok) throw new Error("Error al guardar destilería");
-        data = await res.json();
-        setDestilerias([data, ...destilerias]);
       }
 
-      // RESET FORM
+      await fetchDestilerias();
+      setEditingId(null);
       setForm({
         nombre_comercial: "",
         descripcion: "",
@@ -79,9 +64,7 @@ export default function AdminDestilerias() {
         sitio_web: "",
         activo: 1,
       });
-      setEditingId(null);
     } catch (err) {
-      console.error("Error al guardar destilería:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -89,33 +72,28 @@ export default function AdminDestilerias() {
   }
 
   function handleEdit(d) {
-    setEditingId(d.id_destileria);
-    setForm({
-      nombre_comercial: d.nombre_comercial,
-      descripcion: d.descripcion,
-      logo_url: d.logo_url,
-      email_contacto: d.email_contacto,
-      telefono: d.telefono,
-      direccion: d.direccion,
-      ciudad: d.ciudad,
-      pais: d.pais,
-      sitio_web: d.sitio_web,
-      activo: d.activo,
-    });
-  }
+  setEditingId(d.id_destileria);
+  setForm({
+    nombre_comercial: d.nombre_comercial || "",
+    descripcion: d.descripcion || "",
+    logo_url: d.logo_url || "",
+    email_contacto: d.email_contacto || "",
+    telefono: d.telefono || "",
+    direccion: d.direccion || "",
+    ciudad: d.ciudad || "",
+    pais: d.pais || "",
+    sitio_web: d.sitio_web || "",
+    activo: d.activo ?? 1,
+  });
+}
 
   async function handleDelete(id) {
-    if (!window.confirm("¿Seguro que quieres eliminar esta destilería?")) return;
+    if (!confirm("¿Seguro que quieres eliminar esta destilería?")) return;
 
     try {
-      const res = await fetch(`${API_URL}/${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error(`Error ${res.status}`);
-      setDestilerias(destilerias.filter(d => d.id_destileria !== id));
-    } catch (err) {
-      console.error("Error al eliminar destilería:", err);
+      await apiFetch(`/destilerias/${id}`, { method: "DELETE" });
+      await fetchDestilerias();
+    } catch {
       setError("No se pudo eliminar la destilería");
     }
   }
@@ -126,35 +104,118 @@ export default function AdminDestilerias() {
   }
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Administrar Destilerías</h2>
-      {error && <p style={{ color: "red" }}>{error}</p>}
+    <div className="admin-wrap">
+      <h2 className="admin-title">Administrar Destilerías</h2>
+      {error && <p className="admin-error">{error}</p>}
 
-      <form onSubmit={handleSave} style={{ marginBottom: 20, display: "flex", flexDirection: "column", gap: 10 }}>
-        <input type="text" name="nombre_comercial" placeholder="Nombre comercial" value={form.nombre_comercial} onChange={handleChange} required />
-        <input type="text" name="descripcion" placeholder="Descripción" value={form.descripcion} onChange={handleChange} />
-        <input type="text" name="logo_url" placeholder="URL Logo" value={form.logo_url} onChange={handleChange} />
-        <input type="email" name="email_contacto" placeholder="Email contacto" value={form.email_contacto} onChange={handleChange} />
-        <input type="text" name="telefono" placeholder="Teléfono" value={form.telefono} onChange={handleChange} />
-        <input type="text" name="direccion" placeholder="Dirección" value={form.direccion} onChange={handleChange} />
-        <input type="text" name="ciudad" placeholder="Ciudad" value={form.ciudad} onChange={handleChange} />
-        <input type="text" name="pais" placeholder="País" value={form.pais} onChange={handleChange} />
-        <input type="text" name="sitio_web" placeholder="Sitio web" value={form.sitio_web} onChange={handleChange} />
-        <button type="submit" disabled={loading}>{loading ? "Guardando..." : editingId ? "Actualizar destilería" : "Guardar destilería"}</button>
+      {/* FORM */}
+      <form className="admin-form" onSubmit={handleSave}>
+        <input name="nombre_comercial" placeholder="Nombre comercial" value={form.nombre_comercial} onChange={handleChange} required />
+        <input name="descripcion" placeholder="Descripción" value={form.descripcion} onChange={handleChange} />
+        <input name="logo_url" placeholder="URL logo" value={form.logo_url} onChange={handleChange} />
+        <input name="email_contacto" placeholder="Email contacto" value={form.email_contacto} onChange={handleChange} />
+        <input name="telefono" placeholder="Teléfono" value={form.telefono} onChange={handleChange} />
+        <input name="direccion" placeholder="Dirección" value={form.direccion} onChange={handleChange} />
+        <input name="ciudad" placeholder="Ciudad" value={form.ciudad} onChange={handleChange} />
+        <input name="pais" placeholder="País" value={form.pais} onChange={handleChange} />
+        <input name="sitio_web" placeholder="Sitio web" value={form.sitio_web} onChange={handleChange} />
+
+        <button type="submit" disabled={loading}>
+          {loading ? "Guardando..." : editingId ? "Actualizar destilería" : "Crear destilería"}
+        </button>
       </form>
 
-      <h3>Lista de Destilerías</h3>
-      <ul style={{ listStyle: "none", padding: 0 }}>
+      {/* LISTA */}
+      <div className="admin-list">
         {destilerias.map(d => (
-          <li key={d.id_destileria} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, padding: 10, border: "1px solid #ccc", borderRadius: 6 }}>
-            <span>{d.nombre_comercial} - {d.ciudad}, {d.pais}</span>
-            <div style={{ display: "flex", gap: 6 }}>
-              <button onClick={() => handleEdit(d)} style={{ background: "#f0ad4e", color: "#fff", border: "none", borderRadius: 4, padding: "4px 8px", cursor: "pointer" }}>Editar</button>
-              <button onClick={() => handleDelete(d.id_destileria)} style={{ background: "red", color: "#fff", border: "none", borderRadius: 4, padding: "4px 8px", cursor: "pointer" }}>Eliminar</button>
+          <div key={d.id_destileria} className="admin-card">
+            <strong>{d.nombre_comercial}</strong>
+            <span>{d.ciudad}, {d.pais}</span>
+
+            <div className="admin-actions">
+              <button onClick={() => handleEdit(d)}>Editar</button>
+              <button className="danger" onClick={() => handleDelete(d.id_destileria)}>
+                Eliminar
+              </button>
             </div>
-          </li>
+          </div>
         ))}
-      </ul>
+      </div>
+
+      {/* ESTILOS */}
+      <style>{`
+        .admin-wrap {
+          max-width: 1100px;
+          margin: 0 auto;
+          padding: 24px;
+        }
+
+        .admin-title {
+          margin-bottom: 16px;
+        }
+
+        .admin-error {
+          color: red;
+          margin-bottom: 12px;
+        }
+
+        .admin-form {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+          gap: 12px;
+          margin-bottom: 30px;
+        }
+
+        .admin-form input {
+          padding: 10px;
+          border-radius: 10px;
+          border: 1px solid #ccc;
+        }
+
+        .admin-form button {
+          grid-column: 1 / -1;
+          padding: 12px;
+          border-radius: 999px;
+          border: none;
+          background: #f28c28;
+          font-weight: 900;
+          cursor: pointer;
+        }
+
+        .admin-list {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+          gap: 16px;
+        }
+
+        .admin-card {
+          border: 1px solid #ddd;
+          border-radius: 16px;
+          padding: 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .admin-actions {
+          display: flex;
+          gap: 8px;
+          margin-top: 8px;
+        }
+
+        .admin-actions button {
+          flex: 1;
+          border: none;
+          padding: 8px;
+          border-radius: 8px;
+          cursor: pointer;
+        }
+
+        .admin-actions .danger {
+          background: #e74c3c;
+          color: #fff;
+        }
+      `}</style>
     </div>
   );
 }

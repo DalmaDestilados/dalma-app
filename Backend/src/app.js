@@ -10,7 +10,7 @@ import bartenderRoutes from './routes/bartender.routes.js';
 import coctelRoutes from './routes/coctel.routes.js';
 import favoritosRoutes from './routes/favoritos.routes.js';
 import deseosRoutes from './routes/deseos.routes.js';
-
+import passwordRoutes from "./routes/password.routes.js";
 
 const app = express();
 
@@ -33,11 +33,12 @@ app.use('/api/cocteles', coctelRoutes);
 app.use('/api/favoritos', favoritosRoutes);
 app.use('/api/deseos', deseosRoutes);
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+app.use("/api/password", passwordRoutes);
 
 
 
 app.get('/', (req, res) => {
-  res.send('Backend funcionando 🚀');
+  res.send('Backend funcionando');
 });
 
 export default app;
