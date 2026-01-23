@@ -1,0 +1,1121 @@
+/* =========================
+   RESET + VARIABLES
+   ========================= */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --dalma-orange: #f28c28;
+  --dalma-orange-soft: rgba(242, 140, 40, 0.25);
+  --dalma-black: #111;
+  --dalma-white: #ffffff;
+  --dalma-gray: #f3f3f3;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f6f7fb;
+  color: var(--dalma-black);
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 70px; /* espacio para barra inferior */
+}
+
+.main-content {
+  padding-bottom: 86px;
+}
+
+/* =========================
+   HEADER + DRAWER (TU HEADER)
+   ========================= */
+.dalma-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  background: linear-gradient(180deg, #0c0c0c 0%, #141414 100%);
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dalma-burger {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.dalma-burger span {
+  width: 18px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 99px;
+  display: block;
+  margin: 2px 0;
+}
+
+.dalma-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dalma-brand-title {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+}
+.dalma-brand-sub {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+.dalma-search {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+}
+.dalma-search-ico {
+  opacity: 0.8;
+}
+.dalma-search-input {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #fff;
+  font-size: 14px;
+}
+.dalma-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.55);
+}
+.dalma-search-spacer {
+  grid-column: 1 / -1;
+  height: 8px;
+}
+
+/* Overlay */
+.dalma-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 60;
+}
+
+/* Drawer */
+.dalma-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: min(320px, 86vw);
+  background: #0f0f0f;
+  color: #fff;
+  z-index: 70;
+  transform: translateX(-105%);
+  transition: transform 180ms ease;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: auto;
+}
+.dalma-drawer.open {
+  transform: translateX(0%);
+}
+
+.dalma-drawer-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.dalma-drawer-title {
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+.dalma-drawer-close {
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  cursor: pointer;
+}
+
+.dalma-drawer-section {
+  padding: 14px;
+}
+.dalma-drawer-section-title {
+  font-size: 12px;
+  opacity: 0.75;
+  margin-bottom: 10px;
+}
+.dalma-drawer-item {
+  width: 100%;
+  text-align: left;
+  padding: 12px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+  border-radius: 14px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.dalma-chip-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.dalma-chip {
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+}
+.dalma-chip.active {
+  border-color: rgba(242, 140, 40, 0.95);
+  box-shadow: 0 0 0 3px rgba(242, 140, 40, 0.18);
+}
+.dalma-drawer-hint {
+  margin-top: 10px;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* =========================
+   BOTTOM NAV
+   ========================= */
+.dalma-bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 62px;
+  background: #ffffff;
+  border-top: 2px solid var(--dalma-orange);
+  box-shadow: 0 -10px 18px rgba(0, 0, 0, 0.12);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  z-index: 60;
+}
+
+.dalma-bottom-link {
+  display: grid;
+  place-items: center;
+  gap: 3px;
+  padding: 8px 6px;
+  color: rgba(0, 0, 0, 0.7);
+  font-weight: 800;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 10px;
+  margin: 6px;
+  transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.dalma-bottom-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+.dalma-bottom-label {
+  line-height: 1;
+}
+.dalma-bottom-link:hover {
+  background: rgba(242, 140, 40, 0.12);
+  transform: translateY(-1px);
+}
+.dalma-bottom-link.is-active {
+  color: #111;
+  background: rgba(242, 140, 40, 0.18);
+  box-shadow: inset 0 0 0 2px rgba(242, 140, 40, 0.25);
+}
+
+/* =========================
+   AUTH (LOGIN / REGISTER)
+   ========================= */
+.dalma-auth-page {
+  min-height: calc(100vh - 62px);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: radial-gradient(
+      900px 500px at 20% 0%,
+      rgba(242, 140, 40, 0.22),
+      transparent 60%
+    ),
+    radial-gradient(
+      800px 500px at 90% 20%,
+      rgba(0, 0, 0, 0.08),
+      transparent 55%
+    ),
+    #f6f6f6;
+}
+
+.dalma-auth-shell {
+  width: min(560px, 100%);
+  display: grid;
+  gap: 12px;
+}
+
+.dalma-auth-brand {
+  text-align: center;
+}
+
+.dalma-auth-title {
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+  font-size: 1.7rem;
+  text-shadow: 0 10px 22px rgba(242, 140, 40, 0.22);
+}
+
+.dalma-auth-subtitle {
+  margin-top: 4px;
+  color: rgba(0, 0, 0, 0.7);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.dalma-auth-card.pro {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 18px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.14);
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+  backdrop-filter: blur(10px);
+  animation: dalmaPop 180ms ease-out;
+}
+
+@keyframes dalmaPop {
+  from {
+    transform: translateY(6px);
+    opacity: 0.6;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.dalma-auth-card-title {
+  font-weight: 1000;
+  font-size: 1.05rem;
+  color: #111;
+  margin-bottom: 4px;
+}
+
+.dalma-label {
+  font-weight: 900;
+  color: #111;
+  font-size: 0.9rem;
+}
+
+.dalma-input {
+  width: 100%;
+  border: 2px solid rgba(0, 0, 0, 0.18);
+  border-radius: 10px;
+  padding: 10px 12px;
+  outline: none;
+  background: #fff;
+}
+
+.dalma-input:focus {
+  border-color: rgba(242, 140, 40, 0.65);
+  box-shadow: 0 0 0 4px rgba(242, 140, 40, 0.18);
+}
+
+.dalma-btn {
+  margin-top: 6px;
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-weight: 900;
+  cursor: pointer;
+  background: var(--dalma-orange);
+  color: #111;
+  box-shadow: 0 10px 18px rgba(242, 140, 40, 0.25);
+}
+.dalma-btn:hover {
+  filter: brightness(1.02);
+  transform: translateY(-1px);
+}
+.dalma-btn:active {
+  transform: translateY(0);
+}
+
+.dalma-error {
+  background: rgba(255, 0, 0, 0.08);
+  border: 1px solid rgba(255, 0, 0, 0.2);
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.dalma-auth-footer {
+  font-size: 0.9rem;
+  color: rgba(0, 0, 0, 0.7);
+}
+.dalma-auth-footer a {
+  color: var(--dalma-orange);
+  font-weight: 900;
+}
+
+/* =========================
+   HOME – DALMA (FIX FINAL)
+   ========================= */
+
+.home-wrap {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 10px 12px 96px;
+  background: #fff;
+}
+
+/* =========================
+   HERO
+========================= */
+.home-hero {
+  display: grid;
+  gap: 18px;
+}
+
+.hero-card {
+  height: 165px;
+  border-radius: 26px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 18px 38px rgba(0,0,0,0.28);
+  background-size: cover;
+  background-position: center;
+}
+
+/* EVENTOS & TURISMO → CARD GRIS */
+.hero-card:nth-child(2) {
+  background: linear-gradient(
+    180deg,
+    #e6e6e6 0%,
+    #cfcfcf 100%
+  ) !important;
+}
+
+.hero-card:nth-child(2)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    180px 80px at 50% 30%,
+    rgba(255,255,255,0.65),
+    transparent 60%
+  );
+}
+
+/* overlay */
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.hero-btn {
+  background: #f7931e;
+  color: #111;
+  font-weight: 900;
+  font-size: 15px;
+  padding: 14px 30px;
+  border-radius: 999px;
+  min-width: 240px;
+  box-shadow: 0 14px 30px rgba(0,0,0,0.35);
+}
+
+/* =========================
+   SECTION TITLE
+========================= */
+.home-section {
+  margin-top: 26px;
+}
+
+.section-title {
+  text-align: center;
+  font-weight: 900;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  color: #f7931e;
+}
+
+/* =========================
+   MEET THE BEST
+========================= */
+.home-section > div {
+  border-radius: 26px !important;
+}
+
+.home-section img,
+.home-section svg {
+  filter: drop-shadow(0 16px 22px rgba(0,0,0,0.22));
+}
+
+/* =========================
+   MASTERS – SOLO PERSONAS
+========================= */
+.home-section div[style*="height: 170"] {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  background: linear-gradient(
+    135deg,
+    #d9d9d9,
+    #bfbfbf
+  );
+}
+
+/* fallback PERSONA (no cóctel) */
+.home-section div[style*="height: 170"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("https://images.unsplash.com/photo-1520974735194-6b75eecf8b98?auto=format&fit=crop&w=800&q=60");
+  background-size: cover;
+  background-position: center;
+  opacity: 0.45;
+}
+
+.home-section div[style*="height: 170"] img {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* textos masters */
+.home-section div[style*="var(--dalma-orange)"] {
+  font-size: 14px;
+}
+
+.home-section div[style*="marginTop: -4"] {
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+/* =========================
+   RESULTADOS
+========================= */
+.dalma-feed {
+  display: grid;
+  gap: 16px;
+}
+
+.dalma-feed-item {
+  background: #fff;
+  border-radius: 20px;
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 16px 34px rgba(0,0,0,0.14);
+  padding: 12px;
+  display: flex;
+  gap: 12px;
+}
+
+.dalma-thumb {
+  width: 92px;
+  height: 72px;
+  border-radius: 16px;
+  background-size: cover;
+  background-position: center;
+  background-image: url("https://images.unsplash.com/photo-1514361892635-eae31da6f09b?auto=format&fit=crop&w=800&q=60");
+}
+
+.dalma-feed-name {
+  font-weight: 900;
+  font-size: 14px;
+}
+
+.dalma-feed-sub {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.dalma-feed-meta {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.dalma-star {
+  color: #f7931e;
+}
+
+/* =========================
+   DESTILERÍAS (SOLO DISEÑO)
+   - “Imagen” va en el cuadro, nombre fuera
+   ========================= */
+.dalma-page {
+  min-height: 100vh;
+  background: #f6f7fb;
+}
+
+.dalma-producers {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 16px 14px 90px;
+}
+
+.dalma-producers-hero {
+  border-radius: 18px;
+  padding: 16px 16px 14px;
+  background: linear-gradient(
+    135deg,
+    rgba(242, 140, 40, 0.14),
+    rgba(17, 17, 17, 0.06)
+  );
+  border: 1px solid rgba(17, 17, 17, 0.06);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.06);
+}
+
+.dalma-producers-title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: #111;
+}
+
+.dalma-producers-sub {
+  margin-top: 6px;
+  color: rgba(17, 17, 17, 0.7);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.dalma-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+@media (max-width: 840px) {
+  .dalma-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 520px) {
+  .dalma-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* card */
+.dalma-card {
+  display: grid;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+  padding: 0;
+  background: transparent;
+}
+
+/* CUADRO SOLO “IMAGEN” */
+.dalma-card-cover {
+  height: 140px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: radial-gradient(
+      120px 60px at 20% 20%,
+      rgba(242, 140, 40, 0.35),
+      transparent 60%
+    ),
+    radial-gradient(
+      140px 80px at 90% 10%,
+      rgba(17, 17, 17, 0.18),
+      transparent 60%
+    ),
+    linear-gradient(135deg, rgba(17, 17, 17, 0.06), rgba(242, 140, 40, 0.1));
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.06);
+  position: relative;
+}
+
+.dalma-card-cover-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(17, 17, 17, 0.12);
+}
+
+/* TEXTO AFUERA DEL CUADRO */
+.dalma-card-body {
+  padding: 0 6px;
+}
+
+.dalma-card-title {
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.15;
+  color: #111;
+}
+
+.dalma-card-sub {
+  margin-top: 6px;
+  font-size: 13px;
+  color: rgba(17, 17, 17, 0.7);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dalma-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #f28c28;
+  box-shadow: 0 0 0 4px rgba(242, 140, 40, 0.18);
+}
+
+.dalma-card-cta {
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 900;
+  color: #f28c28;
+}
+
+/* =========================
+   PRODUCER DETAIL (MOCKUP)
+   ========================= */
+.pd-wrap {
+  max-width: 560px; /* “pantalla móvil” centrada */
+  margin: 0 auto;
+  padding: 0 14px 92px;
+}
+
+.pd-hero {
+  height: 260px;
+  margin: 0 -14px;
+  border-radius: 0 0 26px 26px;
+  overflow: hidden;
+  position: relative;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.5));
+}
+
+.pd-hero-slider {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: start;
+  padding: 18px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0));
+}
+
+.pd-hero-slide {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(0, 0, 0, 0.78);
+  font-weight: 800;
+  backdrop-filter: blur(8px);
+}
+
+.pd-hero-controls {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pd-hero-nav {
+  display: flex;
+  gap: 6px;
+}
+.pd-hero-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+}
+.pd-hero-dot.on {
+  background: rgba(242, 140, 40, 0.95);
+}
+
+.pd-hero-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.pd-hero-btn {
+  width: 40px;
+  height: 36px;
+  border-radius: 12px;
+  border: 0;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  font-weight: 1000;
+}
+
+.pd-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(160px 90px at 15% 20%, rgba(242, 140, 40, 0.25), transparent 60%);
+  pointer-events: none;
+}
+
+.pd-hero-back {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  z-index: 5;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 0;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+}
+
+.pd-hero-card {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: -46px;
+  z-index: 4;
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(10px);
+}
+
+.pd-logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  font-weight: 1000;
+  color: #111;
+  background: linear-gradient(135deg, rgba(242, 140, 40, 0.24), rgba(0, 0, 0, 0.04));
+  border: 1px solid rgba(242, 140, 40, 0.22);
+}
+
+.pd-name {
+  font-size: 20px;
+  font-weight: 1000;
+  color: #111;
+  line-height: 1.1;
+}
+
+.pd-hero-lines {
+  margin-top: 6px;
+  display: grid;
+  gap: 2px;
+}
+
+.pd-hero-line {
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.7);
+  font-weight: 700;
+}
+
+/* Tabs mockup */
+.pd-tabs-wrap {
+  margin-top: 72px;
+  padding-top: 14px;
+  background: transparent;
+}
+.pd-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.pd-tab {
+  padding: 14px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  font-weight: 1000;
+  letter-spacing: 0.12em;
+  color: rgba(0, 0, 0, 0.62);
+}
+.pd-tab.active {
+  color: #111;
+  border-color: rgba(242, 140, 40, 0.55);
+  box-shadow: 0 0 0 3px rgba(242, 140, 40, 0.16), 0 12px 26px rgba(0, 0, 0, 0.06);
+}
+.pd-tab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Título naranja centrado */
+.pd-section-title {
+  text-align: center;
+  margin: 14px 0 10px;
+  font-weight: 1000;
+  color: #f28c28;
+  text-transform: lowercase;
+  letter-spacing: 0.08em;
+}
+
+/* líneas extra (maestra destiladora...) */
+.pd-meta-lines {
+  margin: 0 2px 10px;
+}
+.pd-meta-strong {
+  font-weight: 900;
+  color: rgba(0, 0, 0, 0.82);
+}
+.pd-meta-soft {
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 13px;
+}
+
+/* card principal */
+.pd-card {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.06);
+}
+.pd-text {
+  font-size: 14px;
+  line-height: 1.45;
+  color: rgba(0, 0, 0, 0.74);
+}
+
+.pd-list {
+  margin-top: 12px;
+  display: grid;
+  gap: 12px;
+}
+.pd-li {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+.pd-li-ico {
+  width: 34px;
+  height: 34px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: rgba(242, 140, 40, 0.14);
+  border: 1px solid rgba(242, 140, 40, 0.2);
+}
+
+/* Más recomendado */
+.pd-block-title {
+  margin: 18px 2px 10px;
+  font-size: 20px;
+  font-weight: 1000;
+  color: rgba(0, 0, 0, 0.82);
+}
+
+.pd-top-card {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.06);
+  text-decoration: none;
+  color: inherit;
+}
+.pd-top-thumb {
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(242, 140, 40, 0.14), rgba(0, 0, 0, 0.02));
+  border: 1px solid rgba(242, 140, 40, 0.18);
+}
+.pd-top-name {
+  font-weight: 1000;
+  font-size: 18px;
+  color: #111;
+}
+.pd-top-sub {
+  margin-top: 4px;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.62);
+}
+.pd-top-star {
+  color: #f28c28;
+  font-weight: 1000;
+}
+.pd-top-cta {
+  margin-top: 10px;
+  color: #f28c28;
+  font-weight: 1000;
+}
+
+/* Eventos demo */
+.pd-events {
+  margin-top: 14px;
+  padding: 2px 2px 0;
+}
+.pd-events-title {
+  font-weight: 1000;
+  margin-top: 10px;
+}
+.pd-events-sub {
+  color: rgba(0, 0, 0, 0.62);
+  font-weight: 700;
+  margin-top: 4px;
+  font-size: 13px;
+}
+.pd-events-btn {
+  margin-top: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #fff;
+  padding: 10px 12px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+/* Contacto (mockup) */
+.pd-contact {
+  margin-top: 16px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 18px;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.06);
+  padding: 14px;
+}
+
+.pd-contact-title {
+  text-align: center;
+  font-weight: 1000;
+  color: rgba(0, 0, 0, 0.82);
+}
+
+.pd-contact-icons {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.pd-ico {
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: rgba(242, 140, 40, 0.14);
+  border: 1px solid rgba(242, 140, 40, 0.18);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
+}
+
+.pd-contact-hint {
+  margin-top: 10px;
+  font-style: italic;
+  color: rgba(0, 0, 0, 0.56);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.pd-contact-form {
+  margin-top: 10px;
+  display: grid;
+  gap: 10px;
+}
+
+.pd-input {
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #fff;
+  padding: 12px 14px;
+  font-weight: 800;
+  outline: none;
+}
+.pd-input:focus {
+  border-color: rgba(242, 140, 40, 0.55);
+  box-shadow: 0 0 0 4px rgba(242, 140, 40, 0.14);
+}
+.pd-textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.pd-contact-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.pd-send {
+  border: 0;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-weight: 1000;
+  background: #f28c28;
+  color: #111;
+  cursor: pointer;
+  box-shadow: 0 12px 22px rgba(242, 140, 40, 0.25);
+}
+
+.pd-sent {
+  font-weight: 900;
+  color: rgba(0, 0, 0, 0.7);
+  font-size: 13px;
+}
+
+/* responsive */
+@media (max-width: 900px) {
+  .dalma-search {
+    margin-top: 10px;
+  }
+}
