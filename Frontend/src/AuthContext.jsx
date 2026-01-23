@@ -10,27 +10,24 @@ let isLogging = false;
 let isGettingMe = false;
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null); // <-- sigue como user
+  const [user, setUser] = useState(null);
   const [booting, setBooting] = useState(true);
   const [isAuthed, setIsAuthed] = useState(false);
 
-  const [isResetting, setIsResetting] = useState(false); // <-- agregado para resetPassword
+  const [isResetting, setIsResetting] = useState(false);
 
   const api = axios.create({
     baseURL: API,
-    withCredentials: true, // 🔥 necesario para cookies
+    withCredentials: true,
   });
 
   async function getMe() {
-    // Evita múltiples requests al mismo tiempo
     if (isGettingMe) return user;
 
     try {
       isGettingMe = true;
 
       const res = await api.get("/me");
-
-      // 🔥 CORRECCIÓN REAL: el backend devuelve { user: {...} }
       const usuario = res.data?.user || null;
 
       if (usuario) {
@@ -40,7 +37,6 @@ export function AuthProvider({ children }) {
 
       return usuario;
     } catch {
-      // ❗ NO hacer logout acá (productos son públicos)
       return null;
     } finally {
       isGettingMe = false;
@@ -48,7 +44,6 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    // Solo se ejecuta una vez al montar el AuthProvider
     (async () => {
       await getMe();
       setBooting(false);
@@ -65,7 +60,6 @@ export function AuthProvider({ children }) {
         password: form.password,
       });
 
-      // 🔥 CORRECCIÓN REAL
       const usuario = res.data?.user || null;
 
       if (usuario) {
@@ -81,9 +75,18 @@ export function AuthProvider({ children }) {
     }
   }
 
+  // 🔥 AQUÍ ESTABA EL ERROR REAL
   async function register(form) {
     try {
-      const res = await api.post("/register", form);
+      const payload = {
+        nombre: form.nombre,
+        email: form.email,
+        password: form.password,
+        fecha_nacimiento: form.fecha_nacimiento,
+        acepta_terminos: true, // 🔒 backend exige confirmación
+      };
+
+      const res = await api.post("/register", payload);
       return res.data;
     } catch (err) {
       throw new Error(err.response?.data?.message || "Error al registrar");
@@ -99,9 +102,14 @@ export function AuthProvider({ children }) {
   async function verifyEmail({ email, token }) {
     try {
       const res = await api.post("/verify-email", { email, token });
-      return res.data?.message || "Correo verificado correctamente. Ya puedes iniciar sesión.";
+      return (
+        res.data?.message ||
+        "Correo verificado correctamente. Ya puedes iniciar sesión."
+      );
     } catch (err) {
-      throw new Error(err.response?.data?.message || "No se pudo verificar el correo.");
+      throw new Error(
+        err.response?.data?.message || "No se pudo verificar el correo."
+      );
     }
   }
 
@@ -110,12 +118,13 @@ export function AuthProvider({ children }) {
       const res = await api.post("/forgot-password", { email });
       return res.data?.message;
     } catch (err) {
-      throw new Error(err.response?.data?.message || "No se pudo enviar el correo");
+      throw new Error(
+        err.response?.data?.message || "No se pudo enviar el correo"
+      );
     }
   }
 
   async function resetPassword(data) {
-    // Evita envíos múltiples al mismo tiempo desde el frontend
     if (isResetting) return;
     setIsResetting(true);
 
@@ -123,13 +132,14 @@ export function AuthProvider({ children }) {
       const res = await api.post("/reset-password", data);
       return res.data?.message;
     } catch (err) {
-      // Manejo de 429 solo para mostrar mensaje al usuario
       if (err.response?.status === 429) {
         throw new Error(
           "Has enviado muchas solicitudes. Espera unos segundos antes de intentar nuevamente."
         );
       }
-      throw new Error(err.response?.data?.message || "No se pudo cambiar contraseña");
+      throw new Error(
+        err.response?.data?.message || "No se pudo cambiar contraseña"
+      );
     } finally {
       setIsResetting(false);
     }
@@ -138,8 +148,8 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider
       value={{
-        user, // <-- se mantiene
-        usuarios: user, // <-- se mantiene para el botón admin
+        user,
+        usuarios: user,
         isAuthed,
         booting,
         login,
