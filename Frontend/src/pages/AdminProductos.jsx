@@ -1,9 +1,19 @@
 import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { apiFetch } from "../api";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
 export default function AdminProductos() {
+  const { idDestileria } = useParams();
+  const navigate = useNavigate();
+
   const [productos, setProductos] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [editingId, setEditingId] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+
   const [form, setForm] = useState({
     nombre: "",
     descripcion: "",
@@ -12,253 +22,248 @@ export default function AdminProductos() {
     stock: "",
     grado_alcoholico: "",
     contenido_neto: "",
-    id_destileria: "",
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [editingId, setEditingId] = useState(null);
 
-  const token = localStorage.getItem("token");
-
+  /* =========================
+     CARGAR PRODUCTOS
+  ========================= */
   useEffect(() => {
     fetchProductos();
-  }, []);
+  }, [idDestileria]);
 
-  // =========================
-  // ✅ LISTADO ADMIN CORRECTO
-  // =========================
   async function fetchProductos() {
     try {
-      const res = await fetch(`${API_BASE}/api/productos/admin/list`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) throw new Error("No autorizado");
-
-      const data = await res.json();
-      setProductos(Array.isArray(data) ? data : []);
-      setError("");
-    } catch (err) {
-      console.error(err);
-      setError("No se pudieron cargar los productos (admin)");
-      setProductos([]);
-    }
-  }
-
-  async function handleSave(e) {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-
-    try {
-      const res = await fetch(
-        editingId
-          ? `${API_BASE}/api/productos/${editingId}`
-          : `${API_BASE}/api/productos`,
-        {
-          method: editingId ? "PUT" : "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(form),
-        }
+      const data = await apiFetch(
+        `/productos/destileria/${idDestileria}`
       );
-
-      if (!res.ok) throw new Error("Error al guardar producto");
-
-      await fetchProductos();
-
-      setForm({
-        nombre: "",
-        descripcion: "",
-        categoria: "",
-        precio: "",
-        stock: "",
-        grado_alcoholico: "",
-        contenido_neto: "",
-        id_destileria: "",
-      });
-      setEditingId(null);
-    } catch (err) {
-      console.error(err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      setProductos(data);
+    } catch {
+      setError("Error al cargar productos");
     }
   }
 
-  function handleEdit(p) {
-    setEditingId(p.id_producto);
-    setForm({
-      nombre: p.nombre,
-      descripcion: p.descripcion,
-      categoria: p.categoria,
-      precio: p.precio,
-      stock: p.stock,
-      grado_alcoholico: p.grado_alcoholico,
-      contenido_neto: p.contenido_neto,
-      id_destileria: p.id_destileria,
-    });
-  }
-
-  // =========================
-  // 🔁 OCULTAR / MOSTRAR
-  // =========================
-  async function handleToggleActivo(p) {
-    try {
-      const url = p.activo
-        ? `${API_BASE}/api/productos/${p.id_producto}`
-        : `${API_BASE}/api/productos/${p.id_producto}/mostrar`;
-
-      const method = p.activo ? "DELETE" : "PATCH";
-
-      const res = await fetch(url, {
-        method,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) throw new Error("Error al cambiar estado");
-
-      await fetchProductos();
-    } catch (err) {
-      console.error(err);
-      setError("No se pudo cambiar el estado del producto");
-    }
-  }
-
+  /* =========================
+     FORM
+  ========================= */
   function handleChange(e) {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
   }
 
+  function resetForm() {
+    setForm({
+      nombre: "",
+      descripcion: "",
+      categoria: "",
+      precio: "",
+      stock: "",
+      grado_alcoholico: "",
+      contenido_neto: "",
+    });
+    setEditingId(null);
+    setImageFile(null);
+  }
+
+  function handleEdit(p) {
+    setEditingId(p.id_producto);
+    setForm({
+      nombre: p.nombre || "",
+      descripcion: p.descripcion || "",
+      categoria: p.categoria || "",
+      precio: p.precio || "",
+      stock: p.stock || "",
+      grado_alcoholico: p.grado_alcoholico || "",
+      contenido_neto: p.contenido_neto || "",
+    });
+  }
+
+  async function handleDelete(id) {
+    if (!confirm("¿Eliminar producto?")) return;
+    await apiFetch(`/productos/${id}`, { method: "DELETE" });
+    fetchProductos();
+  }
+
+  /* =========================
+     GUARDAR PRODUCTO
+  ========================= */
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const payload = {
+        ...form,
+        id_destileria: idDestileria,
+      };
+
+      let productoId;
+
+      if (editingId) {
+        await apiFetch(`/productos/${editingId}`, {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        });
+        productoId = editingId;
+      } else {
+        const res = await apiFetch("/productos", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+        productoId = res.id_producto;
+      }
+
+      // subir imagen
+      if (imageFile) {
+        const fd = new FormData();
+        fd.append("imagen", imageFile);
+
+        await apiFetch(`/productos/${productoId}/imagen`, {
+          method: "POST",
+          body: fd,
+        });
+      }
+
+      resetForm();
+      fetchProductos();
+    } catch (err) {
+      setError("Error al guardar producto");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="admin-wrap">
-      <h2>Administrar Productos</h2>
-      {error && <p className="admin-error">{error}</p>}
+      <button className="back" onClick={() => navigate(-1)}>
+        ← Volver
+      </button>
 
-      {/* FORM */}
-      <form className="admin-form" onSubmit={handleSave}>
-        {Object.keys(form).map((key) => (
-          <input
-            key={key}
-            type={key.includes("precio") || key.includes("stock") ? "number" : "text"}
-            name={key}
-            placeholder={key.replace("_", " ")}
-            value={form[key]}
-            onChange={handleChange}
-          />
-        ))}
+      <h2>Productos de la destilería</h2>
 
-        <button type="submit" disabled={loading}>
+      {error && <p className="error">{error}</p>}
+
+      <form onSubmit={handleSubmit} className="form">
+        <input name="nombre" placeholder="Nombre" value={form.nombre} onChange={handleChange} required />
+        <textarea name="descripcion" placeholder="Descripción" value={form.descripcion} onChange={handleChange} />
+        <input name="categoria" placeholder="Categoría" value={form.categoria} onChange={handleChange} />
+        <input type="number" name="precio" placeholder="Precio" value={form.precio} onChange={handleChange} />
+        <input type="number" name="stock" placeholder="Stock" value={form.stock} onChange={handleChange} />
+        <input type="number" name="grado_alcoholico" placeholder="% Alcohol" value={form.grado_alcoholico} onChange={handleChange} />
+        <input type="number" name="contenido_neto" placeholder="Contenido (ml)" value={form.contenido_neto} onChange={handleChange} />
+
+        <label>Imagen del producto</label>
+        <input type="file" accept="image/*" onChange={e => setImageFile(e.target.files[0])} />
+
+        <button disabled={loading}>
           {loading ? "Guardando..." : editingId ? "Actualizar producto" : "Crear producto"}
         </button>
       </form>
 
-      {/* LISTA */}
-      <div className="admin-grid">
+      <div className="list">
         {productos.map(p => (
-          <div
-            key={p.id_producto}
-            className="admin-card"
-            style={{ opacity: p.activo ? 1 : 0.45 }}
-          >
+          <div key={p.id_producto} className="card">
+            {p.imagen_url && (
+              <img
+                src={`${API_BASE}/${p.imagen_url}`}
+                alt={p.nombre}
+                className="product-img"
+              />
+            )}
+
             <strong>{p.nombre}</strong>
-            <span>{p.categoria}</span>
-            <span>${Number(p.precio).toLocaleString()}</span>
-            <small>{p.activo ? "Activo" : "Oculto"}</small>
+            <span>${Number(p.precio).toLocaleString("es-CL")}</span>
 
-            <div className="admin-actions">
-              {/* ✅ FIX: type="button" */}
-              <button type="button" onClick={() => handleEdit(p)}>
-                Editar
-              </button>
-
-              {/* ✅ FIX: type="button" */}
-              <button
-                type="button"
-                className={p.activo ? "danger" : ""}
-                onClick={() => handleToggleActivo(p)}
-              >
-                {p.activo ? "Ocultar" : "Mostrar"}
+            <div className="actions">
+              <button onClick={() => handleEdit(p)}>Editar</button>
+              <button className="danger" onClick={() => handleDelete(p.id_producto)}>
+                Eliminar
               </button>
             </div>
           </div>
         ))}
       </div>
 
-      {/* CSS */}
+      {/* ================= CSS ================= */}
       <style>{`
         .admin-wrap {
-          max-width: 1100px;
-          margin: 0 auto;
-          padding: 24px;
+          max-width: 420px;
+          margin: auto;
+          padding: 20px 16px 90px;
         }
 
-        .admin-error {
-          color: red;
-          margin-bottom: 12px;
+        .back {
+          background: none;
+          border: none;
+          margin-bottom: 10px;
+          font-size: 14px;
         }
 
-        .admin-form {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-          gap: 10px;
-          margin-bottom: 30px;
+        h2 {
+          text-align: center;
+          color: #f28c28;
         }
 
-        .admin-form input {
-          padding: 10px;
-          border-radius: 8px;
-          border: 1px solid #ccc;
-        }
-
-        .admin-form button {
-          grid-column: 1 / -1;
+        .form input,
+        .form textarea {
+          width: 100%;
           padding: 12px;
-          border-radius: 999px;
-          border: none;
-          background: #f28c28;
-          font-weight: 900;
-          cursor: pointer;
-        }
-
-        .admin-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-          gap: 16px;
-        }
-
-        .admin-card {
-          border: 1px solid #ddd;
+          margin-bottom: 8px;
           border-radius: 14px;
+          border: 1px solid #ddd;
+        }
+
+        .form button {
+          width: 100%;
           padding: 14px;
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-
-        .admin-actions {
-          display: flex;
-          gap: 6px;
-          margin-top: 8px;
-        }
-
-        .admin-actions button {
-          flex: 1;
+          background: linear-gradient(135deg, #f28c28, #ff9f43);
+          color: #111;
           border: none;
-          padding: 6px;
-          border-radius: 6px;
-          cursor: pointer;
+          border-radius: 999px;
+          font-weight: 900;
+          margin-top: 10px;
         }
 
-        .admin-actions .danger {
+        .list {
+          margin-top: 20px;
+        }
+
+        .card {
+          background: #fff;
+          padding: 14px;
+          border-radius: 18px;
+          margin-bottom: 14px;
+          box-shadow: 0 10px 24px rgba(0,0,0,.12);
+        }
+
+        .product-img {
+          width: 100%;
+          height: 160px;
+          object-fit: cover;
+          border-radius: 14px;
+          margin-bottom: 8px;
+        }
+
+        .actions {
+          display: flex;
+          justify-content: space-between;
+          margin-top: 10px;
+        }
+
+        .actions button {
+          border: none;
+          padding: 6px 12px;
+          border-radius: 8px;
+        }
+
+        .danger {
           background: #e74c3c;
-          color: #fff;
+          color: white;
+        }
+
+        .error {
+          color: red;
+          text-align: center;
         }
       `}</style>
     </div>

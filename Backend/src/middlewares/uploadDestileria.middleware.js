@@ -1,36 +1,38 @@
-import multer from 'multer';
-import fs from 'fs';
-import path from 'path';
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const { id } = req.params;
+    // si viene id 
+    const id = req.params.id || "temp";
 
-    const uploadPath = path.join('uploads', 'destilerias', id);
+    const uploadPath = path.join(
+      process.cwd(),
+      "uploads",
+      "destilerias",
+      id.toString()
+    );
 
-    // Crear carpeta si no existe
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
-    }
+    // crear carpeta si no existe
+    fs.mkdirSync(uploadPath, { recursive: true });
 
     cb(null, uploadPath);
   },
 
   filename: (req, file, cb) => {
-    const uniqueName = Date.now() + '-' + file.originalname;
-    cb(null, uniqueName);
-  }
+    const ext = path.extname(file.originalname);
+    const name = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+    cb(null, name);
+  },
 });
-
-const fileFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith('image/')) {
-    cb(null, true);
-  } else {
-    cb(new Error('Solo se permiten imágenes'), false);
-  }
-};
 
 export const uploadDestileriaImage = multer({
   storage,
-  fileFilter
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype.startsWith("image/")) {
+      cb(new Error("Solo imágenes"));
+    }
+    cb(null, true);
+  },
 });

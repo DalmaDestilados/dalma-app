@@ -1,4 +1,7 @@
 import Producto from '../models/producto.model.js';
+import fs from "fs";
+import path from "path";
+import pool from "../config/db.js";
 
 // =====================
 // ADMIN
@@ -34,7 +37,7 @@ export const crearProducto = async (req, res) => {
   }
 };
 
-// 🔹 ADMIN LIST (AGREGADO – usa el método admin)
+// ADMIN LIST 
 export const obtenerProductos = async (req, res) => {
   try {
     const productos = await Producto.obtenerTodosAdmin();
@@ -89,7 +92,7 @@ export const actualizarProducto = async (req, res) => {
   }
 };
 
-// 🔴 Ocultar producto (soft delete)
+// Ocultar producto (soft delete)
 export const eliminarProducto = async (req, res) => {
   try {
     const { id } = req.params;
@@ -100,7 +103,7 @@ export const eliminarProducto = async (req, res) => {
   }
 };
 
-// 🟢 MOSTRAR producto
+//  MOSTRAR producto
 export const mostrarProducto = async (req, res) => {
   try {
     const { id } = req.params;
@@ -146,5 +149,37 @@ export const obtenerProductosPublicosPorDestileria = async (req, res) => {
     res.json(productos);
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener productos públicos' });
+  }
+};
+
+export const subirImagenProducto = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!req.file) {
+      return res.status(400).json({ message: "No se subió imagen" });
+    }
+
+    const [rows] = await pool.query(
+      "SELECT imagen_url FROM productos WHERE id_producto = ?",
+      [id]
+    );
+
+    // borrar imagen anterior
+    if (rows.length && rows[0].imagen_url) {
+      const oldPath = path.join(process.cwd(), rows[0].imagen_url);
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
+
+    const imageUrl = req.file.path.replace(/\\/g, "/");
+
+    await pool.query(
+      "UPDATE productos SET imagen_url = ? WHERE id_producto = ?",
+      [imageUrl, id]
+    );
+
+    res.json({ message: "Imagen actualizada", imagen_url: imageUrl });
+  } catch (error) {
+    res.status(500).json({ message: "Error imagen producto", error });
   }
 };

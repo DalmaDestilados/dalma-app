@@ -23,7 +23,7 @@ const router = express.Router();
 const ROL_ADMIN = 3;
 
 /* =====================================================
-   🔓 RUTAS PÚBLICAS (SOLO PRODUCTOS ACTIVOS)
+    RUTAS PÚBLICAS (SOLO PRODUCTOS ACTIVOS)
 ===================================================== */
 
 // listado público
@@ -42,12 +42,12 @@ router.get(
 );
 
 /* =====================================================
-   🔐 RUTAS ADMIN
+    RUTAS ADMIN
 ===================================================== */
 
 router.use(authMiddleware, verificarRol(ROL_ADMIN));
 
-// ✅ LISTADO ADMIN (activos + ocultos)
+//  LISTADO ADMIN (activos + ocultos)
 router.get('/admin/list', obtenerProductos);
 
 // crear producto
@@ -62,14 +62,14 @@ router.get('/destileria/:id_destileria', obtenerProductosPorDestileria);
 // actualizar producto
 router.put('/:id', actualizarProducto);
 
-// 🔴 ocultar producto (soft delete)
+//  ocultar producto (soft delete)
 router.delete('/:id', eliminarProducto);
 
-// 🟢 mostrar / reactivar producto
+//  mostrar / reactivar producto
 router.patch('/:id/mostrar', mostrarProducto);
 
 /* =====================================================
-   🖼️ IMÁGENES DE PRODUCTO
+    IMÁGENES DE PRODUCTO
 ===================================================== */
 
 router.post(

@@ -17,6 +17,8 @@ import passwordRoutes from "./routes/password.routes.js";
 
 const app = express();
 
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+
 /* =========================
    CORS (ARREGLADO)
 ========================= */
@@ -64,11 +66,13 @@ app.get('/', (req, res) => {
    ERROR GLOBAL
 ========================= */
 app.use((err, req, res, next) => {
-  console.error('🔥 ERROR GLOBAL:', err);
+  console.error(' ERROR GLOBAL:', err);
   res.status(500).json({
     message: 'Error interno del servidor',
     error: err.message,
   });
 });
+
+
 
 export default app;

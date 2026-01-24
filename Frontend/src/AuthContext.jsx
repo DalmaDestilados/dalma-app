@@ -23,35 +23,47 @@ export function AuthProvider({ children }) {
   const [isResetting, setIsResetting] = useState(false);
 
   const api = axios.create({
-    baseURL: API_AUTH,
-    withCredentials: true,
-  });
+  baseURL: API_AUTH,
+});
+
+// INTERCEPTOR
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
+
 
   /* =========================
      GET ME
   ========================= */
   async function getMe() {
-    if (isGettingMe) return user;
+  if (isGettingMe) return user;
 
-    try {
-      isGettingMe = true;
-      const res = await api.get("/me");
-      const usuario = res.data?.user || null;
+  try {
+    isGettingMe = true;
 
-      if (usuario) {
-        setUser(usuario);
-        setIsAuthed(true);
-      }
+    const res = await api.get("/me");
+    const usuario = res.data || null;
 
-      return usuario;
-    } catch {
-      setUser(null);
-      setIsAuthed(false);
-      return null;
-    } finally {
-      isGettingMe = false;
+    if (usuario) {
+      setUser(usuario);
+      setIsAuthed(true);
     }
+
+    return usuario;
+  } catch {
+    setUser(null);
+    setIsAuthed(false);
+    return null;
+  } finally {
+    isGettingMe = false;
   }
+}
 
   useEffect(() => {
     (async () => {
@@ -75,7 +87,7 @@ export function AuthProvider({ children }) {
 
 const { token, user } = res.data;
 
-// 🔥 GUARDAR TOKEN
+// GUARDAR TOKEN
 if (token) {
   localStorage.setItem("token", token);
 }

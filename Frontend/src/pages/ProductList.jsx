@@ -1,37 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
-/* ===== IMÁGENES LOCALES ===== */
-import ginImg from "../assets/Productos/Gin.jpg";
-import piscoImg from "../assets/Productos/Pisco.jpg";
-import ronImg from "../assets/Productos/Ron.jpg";
-import tequilaImg from "../assets/Productos/Tequila.jpg";
-import vodkaImg from "../assets/Productos/Vodka.jpg";
-import whiskyImg from "../assets/Productos/Whisky.jpg";
-
-/* ===== MAPA CATEGORÍA → IMAGEN ===== */
-const productImages = {
-  gin: ginImg,
-  pisco: piscoImg,
-  ron: ronImg,
-  tequila: tequilaImg,
-  vodka: vodkaImg,
-  whisky: whiskyImg,
-};
-
-/* ===== NORMALIZADOR DE CATEGORÍAS ===== */
-function normalizeCategory(cat = "") {
-  const c = cat.toLowerCase();
-
-  if (c.includes("gin")) return "gin";
-  if (c.includes("pisco")) return "pisco";
-  if (c.includes("ron")) return "ron";
-  if (c.includes("tequila")) return "tequila";
-  if (c.includes("vodka")) return "vodka";
-  if (c.includes("whisky") || c.includes("whiskey")) return "whisky";
-
-  return null;
-}
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
 export default function ProductList() {
   const { producerId } = useParams();
@@ -41,8 +11,8 @@ export default function ProductList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // ✅ ENDPOINT PÚBLICO CORRECTO
-  const API_URL = "http://localhost:3001/api/productos/public";
+  // endpoint público
+  const API_URL = `${API_BASE}/api/productos/public`;
 
   useEffect(() => {
     fetchProductos();
@@ -55,7 +25,7 @@ export default function ProductList() {
 
       let data = await res.json();
 
-      // filtrar por destilería si viene desde ProducerDetail
+      // filtrar por destilería si viene desde el perfil
       if (producerId) {
         data = data.filter(
           (p) => String(p.id_destileria) === String(producerId)
@@ -84,36 +54,38 @@ export default function ProductList() {
       )}
 
       <div className="pl-grid">
-        {productos.map((p) => {
-          const key = normalizeCategory(p.categoria);
-          const img = productImages[key] || piscoImg;
+        {productos.map((p) => (
+          <div
+            key={p.id_producto}
+            className="pl-card"
+            onClick={() => navigate(`/productos/${p.id_producto}`)}
+          >
+            <img
+              src={
+                p.imagen_url
+                  ? `${API_BASE}/${p.imagen_url}`
+                  : "/no-image.png"
+              }
+              alt={p.nombre}
+            />
 
-          return (
-            <div
-              key={p.id_producto}
-              className="pl-card"
-              onClick={() => navigate(`/productos/${p.id_producto}`)}
-            >
-              <img src={img} alt={p.nombre} />
+            <div className="pl-card-body">
+              <h3>{p.nombre}</h3>
+              <p className="pl-category">{p.categoria}</p>
 
-              <div className="pl-card-body">
-                <h3>{p.nombre}</h3>
-                <p className="pl-category">{p.categoria}</p>
-
-                <div className="pl-meta">
-                  <span>{p.contenido_neto} ml</span>
-                  <span>{p.grado_alcoholico}°</span>
-                </div>
-
-                <div className="pl-price">
-                  ${Number(p.precio).toLocaleString("es-CL")}
-                </div>
-
-                <span className="pl-cta">Ver producto →</span>
+              <div className="pl-meta">
+                <span>{p.contenido_neto} ml</span>
+                <span>{p.grado_alcoholico}°</span>
               </div>
+
+              <div className="pl-price">
+                ${Number(p.precio).toLocaleString("es-CL")}
+              </div>
+
+              <span className="pl-cta">Ver producto →</span>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
 
       {/* ===== ESTILOS ===== */}

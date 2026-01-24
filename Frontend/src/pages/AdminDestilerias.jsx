@@ -1,12 +1,20 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../api";
+import { useNavigate } from "react-router-dom";
+
 
 export default function AdminDestilerias() {
   const [destilerias, setDestilerias] = useState([]);
+  const [editingId, setEditingId] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+
+
+  // FORM DATA
   const [form, setForm] = useState({
     nombre_comercial: "",
     descripcion: "",
-    logo_url: "",
     email_contacto: "",
     telefono: "",
     direccion: "",
@@ -15,78 +23,108 @@ export default function AdminDestilerias() {
     sitio_web: "",
     activo: 1,
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [editingId, setEditingId] = useState(null);
 
-  /* =============================
-     FETCH ADMIN (TODAS)
-  ============================== */
+  // FILES
+  const [logoFile, setLogoFile] = useState(null);
+  const [personaFile, setPersonaFile] = useState(null);
+  const [galeriaFiles, setGaleriaFiles] = useState([]);
+
+  // PERSONA
+  const [persona, setPersona] = useState({
+    nombre: "",
+    descripcion: "",
+  });
+
   useEffect(() => {
     fetchDestilerias();
   }, []);
 
   async function fetchDestilerias() {
     try {
-      // ✅ RUTA ADMIN (activas + inactivas)
       const data = await apiFetch("/destilerias/admin/list");
       setDestilerias(data);
     } catch {
-      setError("No se pudieron cargar las destilerías (¿rol admin?)");
+      setError("No se pudieron cargar las destilerías");
     }
   }
 
-  /* =============================
-     CREAR / EDITAR
-  ============================== */
+  function handleChange(e) {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+  }
+
   async function handleSave(e) {
     e.preventDefault();
     setLoading(true);
     setError("");
 
     try {
+      // 1️⃣ CREAR / ACTUALIZAR DESTILERÍA (SIN ARCHIVOS)
+      const payload = { ...form };
+      let result;
+
       if (editingId) {
-        await apiFetch(`/destilerias/${editingId}`, {
+        result = await apiFetch(`/destilerias/${editingId}`, {
           method: "PUT",
-          body: JSON.stringify(form),
+          body: JSON.stringify(payload),
         });
       } else {
-        await apiFetch("/destilerias", {
+        result = await apiFetch("/destilerias", {
           method: "POST",
-          body: JSON.stringify(form),
+          body: JSON.stringify(payload),
         });
       }
 
+      const destileriaId = editingId || result.id_destileria;
+
+      // 2️⃣ LOGO
+      if (logoFile) {
+        const fd = new FormData();
+        fd.append("imagen", logoFile);
+        await apiFetch(`/destilerias/${destileriaId}/imagen`, {
+          method: "POST",
+          body: fd,
+        });
+      }
+
+      // 3️⃣ PERSONA DESTACADA
+      if (personaFile) {
+        const fd = new FormData();
+        fd.append("imagen", personaFile);
+        fd.append("nombre", persona.nombre);
+        fd.append("descripcion", persona.descripcion);
+
+        await apiFetch(`/destilerias/${destileriaId}/persona`, {
+          method: "POST",
+          body: fd,
+        });
+      }
+
+      // 4️⃣ GALERÍA
+      if (galeriaFiles.length) {
+        const fd = new FormData();
+        galeriaFiles.forEach(f => fd.append("imagenes", f));
+
+        await apiFetch(`/destilerias/${destileriaId}/galeria`, {
+          method: "POST",
+          body: fd,
+        });
+      }
+
+      resetForm();
       await fetchDestilerias();
-      setEditingId(null);
-      setForm({
-        nombre_comercial: "",
-        descripcion: "",
-        logo_url: "",
-        email_contacto: "",
-        telefono: "",
-        direccion: "",
-        ciudad: "",
-        pais: "",
-        sitio_web: "",
-        activo: 1,
-      });
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Error al guardar");
     } finally {
       setLoading(false);
     }
   }
 
-  /* =============================
-     EDITAR
-  ============================== */
   function handleEdit(d) {
     setEditingId(d.id_destileria);
     setForm({
       nombre_comercial: d.nombre_comercial || "",
       descripcion: d.descripcion || "",
-      logo_url: d.logo_url || "",
       email_contacto: d.email_contacto || "",
       telefono: d.telefono || "",
       direccion: d.direccion || "",
@@ -97,138 +135,192 @@ export default function AdminDestilerias() {
     });
   }
 
-  /* =============================
-     ACTIVAR / DESACTIVAR (SOFT)
-  ============================== */
-  async function toggleActivo(d) {
-    try {
-      if (d.activo === 1) {
-        // 🔴 DESACTIVAR → ocultar
-        await apiFetch(`/destilerias/${d.id_destileria}`, {
-          method: "DELETE",
-        });
-      } else {
-        // 🟢 ACTIVAR → volver a mostrar
-        await apiFetch(`/destilerias/${d.id_destileria}/mostrar`, {
-          method: "PATCH",
-        });
-      }
-
-      await fetchDestilerias();
-    } catch {
-      setError("No se pudo cambiar el estado");
-    }
+  async function handleDelete(id) {
+    if (!confirm("¿Eliminar destilería?")) return;
+    await apiFetch(`/destilerias/${id}`, { method: "DELETE" });
+    fetchDestilerias();
   }
 
-  function handleChange(e) {
-    const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+  function resetForm() {
+    setEditingId(null);
+    setForm({
+      nombre_comercial: "",
+      descripcion: "",
+      email_contacto: "",
+      telefono: "",
+      direccion: "",
+      ciudad: "",
+      pais: "",
+      sitio_web: "",
+      activo: 1,
+    });
+    setPersona({ nombre: "", descripcion: "" });
+    setLogoFile(null);
+    setPersonaFile(null);
+    setGaleriaFiles([]);
   }
 
   return (
     <div className="admin-wrap">
-      <h2 className="admin-title">Administrar Destilerías</h2>
-      {error && <p className="admin-error">{error}</p>}
+      <h2>Administrar Destilerías</h2>
+      {error && <p className="error">{error}</p>}
 
-      {/* FORM */}
-      <form className="admin-form" onSubmit={handleSave}>
-        <input name="nombre_comercial" placeholder="Nombre comercial" value={form.nombre_comercial} onChange={handleChange} required />
-        <input name="descripcion" placeholder="Descripción" value={form.descripcion} onChange={handleChange} />
-        <input name="logo_url" placeholder="URL logo" value={form.logo_url} onChange={handleChange} />
-        <input name="email_contacto" placeholder="Email contacto" value={form.email_contacto} onChange={handleChange} />
-        <input name="telefono" placeholder="Teléfono" value={form.telefono} onChange={handleChange} />
-        <input name="direccion" placeholder="Dirección" value={form.direccion} onChange={handleChange} />
-        <input name="ciudad" placeholder="Ciudad" value={form.ciudad} onChange={handleChange} />
-        <input name="pais" placeholder="País" value={form.pais} onChange={handleChange} />
-        <input name="sitio_web" placeholder="Sitio web" value={form.sitio_web} onChange={handleChange} />
+      <form onSubmit={handleSave} className="admin-form">
+        <input placeholder="Nombre comercial" name="nombre_comercial" value={form.nombre_comercial} onChange={handleChange} required />
+        <textarea placeholder="Descripción" name="descripcion" value={form.descripcion} onChange={handleChange} />
 
-        <button type="submit" disabled={loading}>
+        <input placeholder="Email contacto" name="email_contacto" value={form.email_contacto} onChange={handleChange} />
+        <input placeholder="Teléfono" name="telefono" value={form.telefono} onChange={handleChange} />
+        <input placeholder="Dirección" name="direccion" value={form.direccion} onChange={handleChange} />
+        <input placeholder="Ciudad" name="ciudad" value={form.ciudad} onChange={handleChange} />
+        <input placeholder="País" name="pais" value={form.pais} onChange={handleChange} />
+        <input placeholder="Sitio web" name="sitio_web" value={form.sitio_web} onChange={handleChange} />
+
+        <select name="activo" value={form.activo} onChange={handleChange}>
+          <option value={1}>Activo</option>
+          <option value={0}>Inactivo</option>
+        </select>
+
+        <label>Logo</label>
+        <input type="file" onChange={e => setLogoFile(e.target.files[0])} />
+
+        <label>Persona destacada</label>
+        <input type="file" onChange={e => setPersonaFile(e.target.files[0])} />
+        <input placeholder="Nombre persona" value={persona.nombre} onChange={e => setPersona(p => ({ ...p, nombre: e.target.value }))} />
+        <textarea placeholder="Descripción persona" value={persona.descripcion} onChange={e => setPersona(p => ({ ...p, descripcion: e.target.value }))} />
+
+        <label>Galería (Carrusel)</label>
+        <input type="file" multiple onChange={e => setGaleriaFiles([...e.target.files])} />
+
+        <button disabled={loading}>
           {loading ? "Guardando..." : editingId ? "Actualizar destilería" : "Crear destilería"}
         </button>
+
+        
       </form>
+      
 
-      {/* LISTA */}
-      <div className="admin-list">
+      <ul className="admin-list">
         {destilerias.map(d => (
-          <div
-            key={d.id_destileria}
-            className="admin-card"
-            style={{ opacity: d.activo ? 1 : 0.4 }}
-          >
-            <strong>
-              {d.nombre_comercial}
-              {!d.activo && " (INACTIVA)"}
-            </strong>
+          <li key={d.id_destileria}>
+            <strong>{d.nombre_comercial}</strong>
             <span>{d.ciudad}, {d.pais}</span>
-
-            <div className="admin-actions">
-              <button type="button" onClick={() => handleEdit(d)}>
-                Editar
-              </button>
-
+            <div>
+              <button onClick={() => handleEdit(d)}>Editar</button>
+              <button className="danger" onClick={() => handleDelete(d.id_destileria)}>Eliminar</button>
               <button
-                type="button"
-                onClick={() => toggleActivo(d)}
-                className={d.activo ? "danger" : ""}
-              >
-                {d.activo ? "Desactivar" : "Activar"}
-              </button>
+              type="button"
+              className="dalma-primary-btn dalma-products-btn"
+              onClick={() =>
+                navigate(`/admin/destilerias/${d.id_destileria}/productos`)
+              }
+            >
+              Gestionar productos
+            </button>
             </div>
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
 
-      {/* ESTILOS */}
+      {/* ================= CSS ================= */}
       <style>{`
         .admin-wrap {
-          max-width: 1100px;
+          max-width: 420px;
           margin: 0 auto;
-          padding: 24px;
+          padding: 20px 16px 100px;
         }
-        .admin-error { color: red; margin-bottom: 12px; }
+
+        h2 {
+          text-align: center;
+          color: #f28c28;
+        }
+
+        .error {
+          color: red;
+          text-align: center;
+        }
+
         .admin-form {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+          display: flex;
+          flex-direction: column;
           gap: 12px;
-          margin-bottom: 30px;
+          margin-bottom: 24px;
         }
-        .admin-form input {
-          padding: 10px;
-          border-radius: 10px;
-          border: 1px solid #ccc;
-        }
-        .admin-form button {
-          grid-column: 1 / -1;
+
+        .admin-form input,
+        .admin-form textarea,
+        .admin-form select {
           padding: 12px;
+          border-radius: 14px;
+          border: 1px solid #ccc;
+          font-size: 14px;
+        }
+
+        .admin-form button {
+          margin-top: 12px;
+          padding: 14px;
           border-radius: 999px;
           border: none;
           background: #f28c28;
+          color: #111;
           font-weight: 900;
         }
+
         .admin-list {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-          gap: 16px;
-        }
-        .admin-card {
-          border: 1px solid #ddd;
-          border-radius: 16px;
-          padding: 14px;
-        }
-        .admin-actions {
+          list-style: none;
+          padding: 0;
           display: flex;
-          gap: 8px;
-          margin-top: 8px;
+          flex-direction: column;
+          gap: 14px;
         }
-        .admin-actions button {
-          flex: 1;
-          padding: 8px;
+
+        .admin-list li {
+          background: #fff;
+          padding: 14px;
+          border-radius: 18px;
+          box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+        }
+
+        .admin-list button {
+          margin-right: 8px;
+          padding: 6px 12px;
           border-radius: 8px;
           border: none;
         }
-        .admin-actions .danger {
+
+        .admin-list .danger {
           background: #e74c3c;
           color: #fff;
+        }
+
+        .dalma-primary-btn {
+          width: 100%;
+          padding: 14px;
+          margin-top: 12px;
+          border: none;
+          border-radius: 999px;
+          background: linear-gradient(135deg, #f28c28, #ff9f43);
+          color: #111;
+          font-weight: 900;
+          font-size: 14px;
+          letter-spacing: 0.04em;
+          cursor: pointer;
+          box-shadow: 0 10px 24px rgba(242, 140, 40, 0.45);
+          transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .dalma-primary-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 14px 32px rgba(242, 140, 40, 0.6);
+        }
+
+        .dalma-primary-btn:active {
+          transform: scale(0.97);
+        }
+
+        /* Variante productos (opcional) */
+        .dalma-products-btn {
+          margin-bottom: 10px;
         }
       `}</style>
     </div>

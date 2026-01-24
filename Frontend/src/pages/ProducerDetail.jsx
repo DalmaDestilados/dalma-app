@@ -1,31 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 
-/* ========= HERO ========= */
-import hero1 from "../assets/Hero/Destileria1.jpg";
-import hero2 from "../assets/Hero/Destileria2.jpg";
-import hero3 from "../assets/Hero/Destileria3.jpg";
-
-/* ========= MASTER ========= */
-import masterImg from "../assets/Masters/MaestroDestilador.jpg";
-
-/* ========= PRODUCTOS ========= */
-import ginImg from "../assets/Productos/Gin.jpg";
-import piscoImg from "../assets/Productos/Pisco.jpg";
-import ronImg from "../assets/Productos/Ron.jpg";
-import tequilaImg from "../assets/Productos/Tequila.jpg";
-import vodkaImg from "../assets/Productos/Vodka.jpg";
-import whiskyImg from "../assets/Productos/Whisky.jpg";
-
-/* ========= CÓCTELES ========= */
-import c1 from "../assets/Cocteles/Coctel1.jpg";
-import c2 from "../assets/Cocteles/Coctel2.jpg";
-import c3 from "../assets/Cocteles/Coctel3.jpg";
-import c4 from "../assets/Cocteles/Coctel4.jpg";
-import c5 from "../assets/Cocteles/Coctel5.jpg";
-import c6 from "../assets/Cocteles/Coctel6.jpg";
-
-/* ========= EVENTO ========= */
+/* FALLBACKS */
+import masterFallback from "../assets/Masters/MaestroDestilador.jpg";
 import eventoImg from "../assets/Evento/Evento.jpg";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
@@ -35,10 +12,13 @@ export default function ProducerDetail() {
   const navigate = useNavigate();
 
   const [producer, setProducer] = useState(null);
+  const [productos, setProductos] = useState([]);
+  const [loadingProductos, setLoadingProductos] = useState(true);
   const [slide, setSlide] = useState(0);
 
-  const heroImages = [hero1, hero2, hero3];
-
+  /* =========================
+     CARGAR PERFIL DESTILERÍA
+  ========================= */
   useEffect(() => {
     async function fetchProducer() {
       try {
@@ -54,21 +34,13 @@ export default function ProducerDetail() {
         const data = await res.json();
 
         setProducer({
-          name: data.nombre_comercial,
-          description: data.descripcion,
+          nombre: data.nombre_comercial,
+          descripcion: data.descripcion,
+          ciudad: data.ciudad,
+          pais: data.pais,
           logo: data.logo_url,
           persona: data.persona,
           galeria: data.galeria || [],
-
-          // ✅ USA LO QUE VIENE DEL CRUD
-          address:
-            [data.ciudad, data.pais].filter(Boolean).join(", ") ||
-            "Ubicación no especificada",
-
-          
-
-          hasShop: false,
-          hasTours: false,
         });
       } catch (err) {
         console.error(err);
@@ -79,71 +51,140 @@ export default function ProducerDetail() {
     fetchProducer();
   }, [producerId, navigate]);
 
+  /* =========================
+     CARGAR PRODUCTOS VINCULADOS
+  ========================= */
+  useEffect(() => {
+    async function fetchProductos() {
+      try {
+        const res = await fetch(
+        `${API_BASE}/api/productos/public/destileria/${producerId}`
+      );
+        if (!res.ok) throw new Error();
+
+        const data = await res.json();
+        setProductos(data);
+      } catch (err) {
+        console.error("Error cargando productos", err);
+        setProductos([]);
+      } finally {
+        setLoadingProductos(false);
+      }
+    }
+
+    fetchProductos();
+  }, [producerId]);
+
   if (!producer) return <div className="pd-loading">Cargando…</div>;
 
-  const next = () => setSlide((s) => (s + 1) % heroImages.length);
+  /* =========================
+     IMÁGENES CARRUSEL
+  ========================= */
+  const images = producer.galeria.length
+    ? producer.galeria.map((g) => `${API_BASE}/${g.imagen_url}`)
+    : producer.logo
+    ? [`${API_BASE}/${producer.logo}`]
+    : [];
+
+  const next = () =>
+    setSlide((s) => (images.length ? (s + 1) % images.length : 0));
   const prev = () =>
-    setSlide((s) => (s - 1 + heroImages.length) % heroImages.length);
+    setSlide((s) =>
+      images.length ? (s - 1 + images.length) % images.length : 0
+    );
 
   return (
     <div className="pd-wrap">
-      {/* HERO */}
+      {/* HERO / GALERÍA */}
       <div
         className="pd-hero"
-        style={{ backgroundImage: `url(${heroImages[slide]})` }}
+        style={{
+          backgroundImage: images.length
+            ? `url(${images[slide]})`
+            : "none",
+        }}
       >
         <button className="pd-back" onClick={() => navigate(-1)}>←</button>
-        <button className="pd-nav left" onClick={prev}>‹</button>
-        <button className="pd-nav right" onClick={next}>›</button>
+
+        {images.length > 1 && (
+          <>
+            <button className="pd-nav left" onClick={prev}>‹</button>
+            <button className="pd-nav right" onClick={next}>›</button>
+          </>
+        )}
       </div>
 
       {/* INFO */}
-      <h1 className="pd-title">{producer.name}</h1>
+      <h1 className="pd-title">{producer.nombre}</h1>
 
-      {producer.address && <div className="pd-pill">{producer.address}</div>}
-      {producer.region && <div className="pd-pill">{producer.region}</div>}
+      {(producer.ciudad || producer.pais) && (
+        <div className="pd-pill">
+          {[producer.ciudad, producer.pais].filter(Boolean).join(", ")}
+        </div>
+      )}
 
       {/* CONÓCENOS */}
       <section className="pd-section">
         <h2>Conócenos</h2>
 
         <div className="pd-about">
-          <p>{producer.description}</p>
+          <p>{producer.descripcion}</p>
 
           <div className="pd-master">
             <img
-              src={producer.persona?.imagen_url || masterImg}
-              alt="Maestro Destilador"
+              src={
+                producer.persona?.imagen_url
+                  ? `${API_BASE}/${producer.persona.imagen_url}`
+                  : masterFallback
+              }
+              alt={producer.persona?.nombre || "Persona destacada"}
             />
             <div>
-              <strong>{producer.persona?.nombre || "Maestro Destilador"}</strong>
-              <div>{producer.persona?.descripcion || "Destilería"}</div>
+              <strong>
+                {producer.persona?.nombre || "Maestro Destilador"}
+              </strong>
+              <div>
+                {producer.persona?.descripcion || "Destilería"}
+              </div>
             </div>
           </div>
         </div>
-
-        <div className="pd-icons">
-          <div>🛒 Punto de venta</div>
-          <div>📍 Visitas guiadas</div>
-          <div>🕒 Lun a Vie 10:00 – 18:00</div>
-        </div>
       </section>
 
-      {/* DESTILADOS */}
+      {/* PRODUCTOS */}
       <section className="pd-section">
-        <h2>Nuestros destilados</h2>
+        <h2>Nuestros productos</h2>
 
-        <div className="pd-grid">
-          {[piscoImg, ginImg, ronImg, tequilaImg, vodkaImg, whiskyImg].map(
-            (img, i) => (
-              <div key={i} className="pd-card">
-                <img src={img} alt="Producto" />
-                <div className="pd-name">Destilado</div>
-                <div className="pd-meta">700 cc</div>
-                <div className="pd-meta">40% abv</div>
-              </div>
-            )
-          )}
+        {loadingProductos && <p>Cargando productos…</p>}
+
+        {!loadingProductos && productos.length === 0 && (
+          <p>No hay productos asociados a esta destilería.</p>
+        )}
+
+        <div className="pd-products-grid">
+          {productos.map((p) => (
+            <div
+              key={p.id_producto}
+              className="pd-product-card"
+              onClick={() => navigate(`/productos/${p.id_producto}`)}
+            >
+              <img
+                src={
+                  p.imagen_url
+                    ? `${API_BASE}/${p.imagen_url}`
+                    : masterFallback
+                }
+                alt={p.nombre}
+              />
+              <h3>{p.nombre}</h3>
+              <p>
+                {p.contenido_neto} ml · {p.grado_alcoholico}%
+              </p>
+              <strong>
+                ${Number(p.precio).toLocaleString("es-CL")}
+              </strong>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -152,21 +193,6 @@ export default function ProducerDetail() {
         <img className="pd-event" src={eventoImg} alt="Evento" />
         <div className="pd-event-label">
           Comparte en nuestros eventos y degustaciones
-        </div>
-      </section>
-
-      {/* CÓCTELES */}
-      <section className="pd-section">
-        <h2>Cócteles recomendados</h2>
-
-        <div className="pd-grid">
-          {[c1, c2, c3, c4, c5, c6].map((img, i) => (
-            <div key={i} className="pd-card">
-              <img src={img} alt="Cóctel" />
-              <div className="pd-name">Cóctel</div>
-              <span className="pd-tag">Especial</span>
-            </div>
-          ))}
         </div>
       </section>
 
@@ -192,6 +218,7 @@ export default function ProducerDetail() {
           background-position: center;
           border-radius: 0 0 24px 24px;
           position: relative;
+          background-color: #eee;
         }
 
         .pd-back {
@@ -258,36 +285,42 @@ export default function ProducerDetail() {
           border-radius: 12px;
         }
 
-        .pd-icons div {
-          padding: 10px 0;
-          border-bottom: 1px solid #eee;
-          font-size: 14px;
-        }
-
-        .pd-grid {
+        .pd-products-grid {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 12px;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 14px;
         }
 
-        .pd-card img {
+        .pd-product-card {
+          background: #fff;
+          border-radius: 16px;
+          padding: 10px;
+          box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+          cursor: pointer;
+          text-align: center;
+        }
+
+        .pd-product-card img {
           width: 100%;
           height: 140px;
           object-fit: cover;
           border-radius: 12px;
+          margin-bottom: 8px;
         }
 
-        .pd-name {
-          text-align: center;
-          font-weight: 700;
-          color: #f28c28;
-          margin-top: 6px;
-          font-size: 13px;
+        .pd-product-card h3 {
+          font-size: 14px;
+          font-weight: 800;
+          margin-bottom: 4px;
         }
 
-        .pd-meta {
-          text-align: center;
+        .pd-product-card p {
           font-size: 12px;
+          color: #555;
+        }
+
+        .pd-product-card strong {
+          color: #f28c28;
         }
 
         .pd-event {
@@ -301,16 +334,6 @@ export default function ProducerDetail() {
           text-align: center;
           font-weight: 700;
           margin-top: 6px;
-        }
-
-        .pd-tag {
-          display: block;
-          text-align: center;
-          background: #f6b37f;
-          border-radius: 6px;
-          margin-top: 6px;
-          padding: 2px 0;
-          font-size: 12px;
         }
 
         .pd-back-link {

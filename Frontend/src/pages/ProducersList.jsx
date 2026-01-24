@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 /* =========================
-   SVG DESTILERÍA (LOCAL)
+   SVG DESTILERÍA (FALLBACK)
 ========================= */
 function DistillerySVG() {
   return (
@@ -24,7 +24,9 @@ export default function ProducersList() {
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
+
   const API_URL = "http://localhost:3001/api/destilerias";
+  const API_URL_BASE = "http://localhost:3001";
 
   useEffect(() => {
     fetchDestilerias();
@@ -32,10 +34,10 @@ export default function ProducersList() {
 
   async function fetchDestilerias() {
     try {
-      const res = await fetch(API_URL, { credentials: "include" });
+      const res = await fetch(API_URL);
       if (!res.ok) throw new Error("No se pudieron cargar las destilerías");
       const data = await res.json();
-      setDestilerias(data); // 🔧 backend ya envía solo activas
+      setDestilerias(data);
     } catch (err) {
       console.error(err);
       setError("No se pudieron cargar las destilerías");
@@ -59,13 +61,21 @@ export default function ProducersList() {
             onClick={() => navigate(`/productores/${d.id_destileria}`)}
           >
             <div className="dalma-producer-image">
-              <DistillerySVG />
+              {d.logo_url ? (
+                <img
+                  src={`${API_URL_BASE}/${d.logo_url}`}
+                  alt={d.nombre_comercial}
+                  className="dalma-logo-img"
+                />
+              ) : (
+                <DistillerySVG />
+              )}
             </div>
 
             <div className="dalma-producer-body">
               <h3>{d.nombre_comercial}</h3>
               <p>
-                {d.ciudad}, {d.pais}
+                {[d.ciudad, d.pais].filter(Boolean).join(", ")}
               </p>
               <span className="dalma-cta">Ver destilería →</span>
             </div>
@@ -73,6 +83,7 @@ export default function ProducersList() {
         ))}
       </div>
 
+      {/* ================= CSS ================= */}
       <style>{`
         .dalma-producers-page {
           max-width: 1100px;
@@ -122,14 +133,20 @@ export default function ProducersList() {
 
         .dalma-producer-image {
           height: 150px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
           background: linear-gradient(
             135deg,
             rgba(242,140,40,0.25),
             rgba(0,0,0,0.08)
           );
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .dalma-logo-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
         }
 
         .dalma-producer-body {

@@ -23,7 +23,7 @@ export const crearDestileria = async (req, res) => {
 };
 
 /* =========================
-   👑 ADMIN
+    ADMIN
 ========================= */
 
 // ADMIN → activas + inactivas
@@ -71,7 +71,7 @@ export const actualizarDestileria = async (req, res) => {
   }
 };
 
-// 👑 SOFT DELETE (NO BORRA)
+// SOFT DELETE (NO BORRA)
 export const eliminarDestileria = async (req, res) => {
   try {
     const { id } = req.params;
@@ -85,7 +85,7 @@ export const eliminarDestileria = async (req, res) => {
   }
 };
 
-// 👑 REACTIVAR
+// REACTIVAR
 export const mostrarDestileria = async (req, res) => {
   try {
     const { id } = req.params;
@@ -100,11 +100,11 @@ export const mostrarDestileria = async (req, res) => {
 };
 
 /* =========================
-   🌍 PÚBLICO (USUARIOS)
+    PÚBLICO (USUARIOS)
 ========================= */
 
-// ✅ SOLO ACTIVAS
-// 🌍 USUARIOS → SOLO DESTILERÍAS ACTIVAS
+//  SOLO ACTIVAS
+//  USUARIOS → SOLO DESTILERÍAS ACTIVAS
 export const obtenerDestileriasPublicas = async (req, res) => {
   try {
     const destilerias = await Destileria.obtenerActivas();
@@ -115,7 +115,7 @@ export const obtenerDestileriasPublicas = async (req, res) => {
 };
 
 
-// ✅ SOLO SI ESTÁ ACTIVA
+//  SOLO SI ESTÁ ACTIVA
 export const obtenerDestileriaPublicaPorId = async (req, res) => {
   try {
     const { id } = req.params;

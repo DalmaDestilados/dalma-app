@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import AdminDestilerias from "./pages/AdminDestilerias.jsx";
-import AdminProductos from "./pages/AdminProductos.jsx"; // 🔹 IMPORT CORRECTO
+import AdminProductos from "./pages/AdminProductos.jsx"; 
 
 import Header from "./components/Header.jsx";
 import BottomNav from "./components/BottomNav.jsx";
@@ -20,7 +20,7 @@ import ProducersList from "./pages/ProducersList.jsx";
 import ProducerDetail from "./pages/ProducerDetail.jsx";
 import ProductList from "./pages/ProductList.jsx";
 import ProductDetail from "./pages/ProductDetail.jsx";
-import CoctailList from "./pages/CoctailList.jsx"; // ✅ NOMBRE REAL DEL ARCHIVO
+import CoctailList from "./pages/CoctailList.jsx"; 
 import CoctailDetail from "./pages/CoctailDetail.jsx";
 
 // NUEVAS PÁGINAS
@@ -121,7 +121,7 @@ export default function App() {
             element={<ProducerDetail />}
           />
 
-          {/* 🔥 RUTA QUE FALTABA (PRODUCTOS POR DESTILERÍA) */}
+          {/*RUTA DE DESTILERÍA */}
           <Route
             path="/productores/:producerId/productos"
             element={<ProductList />}
@@ -160,6 +160,11 @@ export default function App() {
                 <Profile />
               </ProtectedRoute>
             }
+          />
+
+          <Route
+          path="/admin/destilerias/:idDestileria/productos"
+          element={<AdminProductos />}
           />
 
           {/* fallback */}
