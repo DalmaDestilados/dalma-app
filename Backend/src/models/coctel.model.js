@@ -77,6 +77,7 @@ const Coctel = {
     return rows;
   },
 
+  // 🔧 FIX AQUÍ (alineado con listado público)
   async obtenerPublicoPorId(id) {
     const [rows] = await pool.query(`
       SELECT
@@ -87,10 +88,8 @@ const Coctel = {
         c.imagen_url,
         c.id_destileria
       FROM cocteles c
-      LEFT JOIN destilerias d ON c.id_destileria = d.id_destileria
       WHERE c.id_coctel = ?
         AND c.activo = 1
-        AND (c.id_destileria IS NULL OR d.activo = 1)
       LIMIT 1
     `, [id]);
 

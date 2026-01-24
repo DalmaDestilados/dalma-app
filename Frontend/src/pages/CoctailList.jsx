@@ -9,7 +9,8 @@ export default function CoctailList() {
   const [searchMode, setSearchMode] = useState(null); // nombre | destilado | ingrediente
 
   useEffect(() => {
-    fetch("http://localhost:3001/api/cocteles")
+    // ✅ RUTA PÚBLICA CORRECTA
+    fetch("http://localhost:3001/api/cocteles/public")
       .then((res) => {
         if (!res.ok) throw new Error("Error al cargar cócteles");
         return res.json();

@@ -58,8 +58,8 @@ export default function ProducerDetail() {
     async function fetchProductos() {
       try {
         const res = await fetch(
-        `${API_BASE}/api/productos/public/destileria/${producerId}`
-      );
+          `${API_BASE}/api/productos/public/destileria/${producerId}`
+        );
         if (!res.ok) throw new Error();
 
         const data = await res.json();
@@ -86,11 +86,33 @@ export default function ProducerDetail() {
     ? [`${API_BASE}/${producer.logo}`]
     : [];
 
+  /* =========================
+     ASEGURAR MÍNIMO 3 IMÁGENES PARA CARRUSEL
+  ========================= */
+  const carouselImages = (() => {
+    if (images.length >= 3) return images;
+    if (images.length === 2) return [images[0], images[1], images[0]];
+    if (images.length === 1) return [images[0], images[0], images[0]];
+    return [];
+  })();
+
   const next = () =>
     setSlide((s) => (images.length ? (s + 1) % images.length : 0));
   const prev = () =>
     setSlide((s) =>
       images.length ? (s - 1 + images.length) % images.length : 0
+    );
+
+  const nextCarousel = () =>
+    setSlide((s) =>
+      carouselImages.length ? (s + 1) % carouselImages.length : 0
+    );
+
+  const prevCarousel = () =>
+    setSlide((s) =>
+      carouselImages.length
+        ? (s - 1 + carouselImages.length) % carouselImages.length
+        : 0
     );
 
   return (
@@ -99,17 +121,17 @@ export default function ProducerDetail() {
       <div
         className="pd-hero"
         style={{
-          backgroundImage: images.length
-            ? `url(${images[slide]})`
+          backgroundImage: carouselImages.length
+            ? `url(${carouselImages[slide]})`
             : "none",
         }}
       >
         <button className="pd-back" onClick={() => navigate(-1)}>←</button>
 
-        {images.length > 1 && (
+        {carouselImages.length > 1 && (
           <>
-            <button className="pd-nav left" onClick={prev}>‹</button>
-            <button className="pd-nav right" onClick={next}>›</button>
+            <button className="pd-nav left" onClick={prevCarousel}>‹</button>
+            <button className="pd-nav right" onClick={nextCarousel}>›</button>
           </>
         )}
       </div>
@@ -151,6 +173,19 @@ export default function ProducerDetail() {
         </div>
       </section>
 
+      {/* INFO PRODUCTOR */}
+      <section className="pd-section">
+        <h2>Información del productor</h2>
+
+        <ul className="pd-info-list">
+          <li>📍 Dirección productor</li>
+          <li>🌎 Región productor</li>
+          <li>⏰ Horario de atención</li>
+          <li>🏠 No cuenta con punto de venta propio</li>
+          <li>🧭 No cuenta con visitas turísticas guiadas</li>
+        </ul>
+      </section>
+
       {/* PRODUCTOS */}
       <section className="pd-section">
         <h2>Nuestros productos</h2>
@@ -188,12 +223,48 @@ export default function ProducerDetail() {
         </div>
       </section>
 
-      {/* EVENTO */}
+       {/* EVENTO */}
       <section className="pd-section">
         <img className="pd-event" src={eventoImg} alt="Evento" />
         <div className="pd-event-label">
           Comparte en nuestros eventos y degustaciones
         </div>
+      </section>
+
+
+      {/* CÓCTELES RECOMENDADOS */}
+      <section className="pd-section">
+        <h2>Cócteles recomendados</h2>
+
+        <div className="pd-products-grid">
+          {[1,2,3,4,5,6].map((i) => (
+            <div key={i} className="pd-product-card">
+              <img src={eventoImg} alt="Cóctel" />
+              <h3>Nombre cóctel</h3>
+              <p>Suave</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+     
+      {/* CONTACTO */}
+      <section className="pd-section">
+        <h2>Conéctate con nosotros</h2>
+
+        <div className="pd-contact-icons">
+          <span>🌐</span>
+          <span>📷</span>
+          <span>📘</span>
+          <span>✉️</span>
+        </div>
+
+        <form className="pd-contact-form">
+          <input placeholder="Nombre" />
+          <input placeholder="Teléfono" />
+          <textarea placeholder="Mensaje" />
+          <button type="button">Enviar</button>
+        </form>
       </section>
 
       <Link to="/productores" className="pd-back-link">
@@ -340,6 +411,40 @@ export default function ProducerDetail() {
           display: block;
           text-align: center;
           margin: 20px 0;
+        }
+
+        .pd-info-list {
+          list-style: none;
+          padding: 0;
+          line-height: 1.8;
+          font-size: 14px;
+        }
+
+        .pd-contact-icons {
+          display: flex;
+          justify-content: center;
+          gap: 16px;
+          font-size: 22px;
+          margin-bottom: 12px;
+        }
+
+        .pd-contact-form input,
+        .pd-contact-form textarea {
+          width: 100%;
+          margin-bottom: 8px;
+          padding: 8px;
+          border-radius: 8px;
+          border: 1px solid #ddd;
+        }
+
+        .pd-contact-form button {
+          width: 100%;
+          padding: 10px;
+          border-radius: 12px;
+          border: none;
+          background: #f28c28;
+          color: #fff;
+          font-weight: 700;
         }
       `}</style>
     </div>

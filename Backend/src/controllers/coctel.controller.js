@@ -1,5 +1,6 @@
 import Coctel from '../models/coctel.model.js';
 import CoctelIngrediente from '../models/coctelIngrediente.model.js';
+import pool from '../config/db.js'; // ✅ AGREGADO
 
 const ROL_USUARIO = 1;
 const ROL_BARTENDER = 2;
@@ -12,8 +13,9 @@ const LIMITES = {
   [ROL_ADMIN]: Infinity
 };
 
-//crear cocteles
-
+// ======================
+// CREAR CÓCTEL
+// ======================
 export const crearCoctel = async (req, res) => {
   try {
     const {
@@ -86,19 +88,43 @@ export const crearCoctel = async (req, res) => {
   }
 };
 
-//obtener cocteles publicos
-
+// ======================
+// OBTENER CÓCTELES PÚBLICOS ✅ FIX REAL
+// ======================
 export const obtenerCoctelesPublicos = async (req, res) => {
   try {
-    const cocteles = await Coctel.obtenerPublicos();
-    res.json(cocteles);
-  } catch {
+    const [rows] = await pool.query(`
+      SELECT 
+        c.id_coctel,
+        c.nombre,
+        c.descripcion,
+        c.destilado_principal,
+        c.imagen_url,
+        GROUP_CONCAT(
+          CONCAT(
+            ci.ingrediente,
+            IF(ci.cantidad IS NOT NULL, CONCAT(' (', ci.cantidad, ')'), '')
+          )
+          SEPARATOR ', '
+        ) AS ingredientes
+      FROM cocteles c
+      LEFT JOIN coctel_ingredientes ci 
+        ON ci.id_coctel = c.id_coctel
+      WHERE c.activo = 1
+      GROUP BY c.id_coctel
+      ORDER BY c.created_at DESC
+    `);
+
+    res.json(rows);
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Error al obtener cócteles' });
   }
 };
 
-//obtener perfil
-
+// ======================
+// PERFIL CÓCTEL
+// ======================
 export const obtenerCoctelPorId = async (req, res) => {
   try {
     const coctel = await Coctel.obtenerPublicoPorId(req.params.id);
@@ -118,8 +144,9 @@ export const obtenerCoctelPorId = async (req, res) => {
   }
 };
 
-//actualizar coctel
-
+// ======================
+// ACTUALIZAR
+// ======================
 export const actualizarCoctel = async (req, res) => {
   try {
     const { rol, id } = req.usuario;
@@ -153,8 +180,9 @@ export const actualizarCoctel = async (req, res) => {
   }
 };
 
-//eliminar coctel
-
+// ======================
+// ELIMINAR (DESACTIVAR)
+// ======================
 export const eliminarCoctel = async (req, res) => {
   try {
     await Coctel.desactivar(req.params.id);

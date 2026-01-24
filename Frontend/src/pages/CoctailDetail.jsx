@@ -5,14 +5,14 @@ import { useNavigate, useParams } from "react-router-dom";
 import coctelImg from "../assets/Cocteles/Coctel1.jpg";
 
 export default function CoctelDetail() {
-  const { cocktailId } = useParams();
+  const { cocktailId } = useParams(); // ✅ FIX
   const navigate = useNavigate();
 
   const [coctel, setCoctel] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`http://localhost:3001/api/cocteles/${cocktailId}`)
+    fetch(`http://localhost:3001/api/cocteles/public/${cocktailId}`) // ✅ FIX
       .then((res) => {
         if (!res.ok) throw new Error("Error al cargar cóctel");
         return res.json();

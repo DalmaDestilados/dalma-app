@@ -2,14 +2,12 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "../api";
 import { useNavigate } from "react-router-dom";
 
-
 export default function AdminDestilerias() {
   const [destilerias, setDestilerias] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-
 
   // FORM DATA
   const [form, setForm] = useState({
@@ -50,13 +48,20 @@ export default function AdminDestilerias() {
 
   function handleChange(e) {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   }
 
   async function handleSave(e) {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    // 🔒 VALIDACIÓN GALERÍA (SOLO AL CREAR)
+    if (!editingId && galeriaFiles.length < 3) {
+      setError("Debes subir al menos 3 imágenes para la galería");
+      setLoading(false);
+      return;
+    }
 
     try {
       // 1️⃣ CREAR / ACTUALIZAR DESTILERÍA (SIN ARCHIVOS)
@@ -103,7 +108,7 @@ export default function AdminDestilerias() {
       // 4️⃣ GALERÍA
       if (galeriaFiles.length) {
         const fd = new FormData();
-        galeriaFiles.forEach(f => fd.append("imagenes", f));
+        galeriaFiles.forEach((f) => fd.append("imagenes", f));
 
         await apiFetch(`/destilerias/${destileriaId}/galeria`, {
           method: "POST",
@@ -182,26 +187,24 @@ export default function AdminDestilerias() {
         </select>
 
         <label>Logo</label>
-        <input type="file" onChange={e => setLogoFile(e.target.files[0])} />
+        <input type="file" onChange={(e) => setLogoFile(e.target.files[0])} />
 
         <label>Persona destacada</label>
-        <input type="file" onChange={e => setPersonaFile(e.target.files[0])} />
-        <input placeholder="Nombre persona" value={persona.nombre} onChange={e => setPersona(p => ({ ...p, nombre: e.target.value }))} />
-        <textarea placeholder="Descripción persona" value={persona.descripcion} onChange={e => setPersona(p => ({ ...p, descripcion: e.target.value }))} />
+        <input type="file" onChange={(e) => setPersonaFile(e.target.files[0])} />
+        <input placeholder="Nombre persona" value={persona.nombre} onChange={(e) => setPersona((p) => ({ ...p, nombre: e.target.value }))} />
+        <textarea placeholder="Descripción persona" value={persona.descripcion} onChange={(e) => setPersona((p) => ({ ...p, descripcion: e.target.value }))} />
 
-        <label>Galería (Carrusel)</label>
-        <input type="file" multiple onChange={e => setGaleriaFiles([...e.target.files])} />
+        <label>Galería (Carrusel) — mínimo 3 imágenes</label>
+        <input type="file" multiple onChange={(e) => setGaleriaFiles([...e.target.files])} />
+        <small>{galeriaFiles.length} / 3 imágenes seleccionadas</small>
 
         <button disabled={loading}>
           {loading ? "Guardando..." : editingId ? "Actualizar destilería" : "Crear destilería"}
         </button>
-
-        
       </form>
-      
 
       <ul className="admin-list">
-        {destilerias.map(d => (
+        {destilerias.map((d) => (
           <li key={d.id_destileria}>
             <strong>{d.nombre_comercial}</strong>
             <span>{d.ciudad}, {d.pais}</span>
@@ -209,14 +212,12 @@ export default function AdminDestilerias() {
               <button onClick={() => handleEdit(d)}>Editar</button>
               <button className="danger" onClick={() => handleDelete(d.id_destileria)}>Eliminar</button>
               <button
-              type="button"
-              className="dalma-primary-btn dalma-products-btn"
-              onClick={() =>
-                navigate(`/admin/destilerias/${d.id_destileria}/productos`)
-              }
-            >
-              Gestionar productos
-            </button>
+                type="button"
+                className="dalma-primary-btn dalma-products-btn"
+                onClick={() => navigate(`/admin/destilerias/${d.id_destileria}/productos`)}
+              >
+                Gestionar productos
+              </button>
             </div>
           </li>
         ))}
@@ -254,6 +255,11 @@ export default function AdminDestilerias() {
           border-radius: 14px;
           border: 1px solid #ccc;
           font-size: 14px;
+        }
+
+        .admin-form small {
+          font-size: 12px;
+          color: #666;
         }
 
         .admin-form button {
@@ -306,19 +312,8 @@ export default function AdminDestilerias() {
           letter-spacing: 0.04em;
           cursor: pointer;
           box-shadow: 0 10px 24px rgba(242, 140, 40, 0.45);
-          transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
 
-        .dalma-primary-btn:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 14px 32px rgba(242, 140, 40, 0.6);
-        }
-
-        .dalma-primary-btn:active {
-          transform: scale(0.97);
-        }
-
-        /* Variante productos (opcional) */
         .dalma-products-btn {
           margin-bottom: 10px;
         }

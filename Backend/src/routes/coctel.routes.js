@@ -18,6 +18,10 @@ const router = express.Router();
 const ROL_ADMIN = 3;
 
 /* ===== PÚBLICO ===== */
+
+// 🔥 RUTA QUE FALTABA (FIX 401)
+router.get('/', obtenerCoctelesPublicos);
+
 router.get('/public', obtenerCoctelesPublicos);
 router.get('/public/:id', obtenerCoctelPorId);
 
@@ -28,8 +32,7 @@ router.post('/', crearCoctel);
 router.put('/:id', actualizarCoctel);
 router.delete('/:id', verificarRol(ROL_ADMIN), eliminarCoctel);
 
-
-//subir imagen
+// subir imagen
 router.post(
   '/:id/imagen',
   uploadCoctelImage.single('imagen'),
@@ -86,7 +89,7 @@ router.post(
   }
 );
 
-//eliminar imagen coctel
+// eliminar imagen coctel
 router.delete('/:id/imagen', async (req, res) => {
   try {
     const { id } = req.params;

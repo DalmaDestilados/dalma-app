@@ -7,7 +7,7 @@ import hero1 from "../assets/Hero/Destileria3.jpg";
 import hero2 from "../assets/Hero/Destileria4.jpg";
 import hero3 from "../assets/Hero/Destileria5.jpg";
 
-/* PRODUCTOS */
+/* PRODUCTOS (FALLBACK POR CATEGORÍA) */
 import piscoImg from "../assets/Productos/PiscoFondo.jpg";
 import ginImg from "../assets/Productos/Gin.jpg";
 import ronImg from "../assets/Productos/Ron.jpg";
@@ -43,7 +43,6 @@ export default function ProductDetail() {
 
   useEffect(() => {
     axios
-      // ✅ RUTA PÚBLICA CORRECTA
       .get(`${API_BASE}/api/productos/public/${productId}`)
       .then((res) => {
         if (res.data?.activo === 0) {
@@ -66,8 +65,12 @@ export default function ProductDetail() {
   if (!product)
     return <div style={{ padding: 20 }}>Producto no encontrado</div>;
 
-  const bottle =
-    productImages[product.categoria?.toLowerCase()] || piscoImg;
+  /* =========================
+     IMAGEN REAL DEL PRODUCTO
+  ========================= */
+  const bottle = product.imagen_url
+    ? `${API_BASE}/${product.imagen_url}`
+    : productImages[product.categoria?.toLowerCase()] || piscoImg;
 
   const downloadPDF = () => {
     const blob = new Blob(
