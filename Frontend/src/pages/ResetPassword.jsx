@@ -11,7 +11,7 @@ export default function ResetPassword() {
   const { resetPassword } = useAuth();
   const [params] = useSearchParams();
 
-  const email = (params.get("email") || "").toLowerCase();
+  // 🔑 SOLO token (email NO es requerido por backend)
   const token = params.get("token") || "";
 
   const [newPassword, setNewPassword] = useState("");
@@ -22,26 +22,27 @@ export default function ResetPassword() {
 
   const canSubmit = useMemo(() => {
     return (
-      email &&
       token &&
       strongPassword(newPassword) &&
       newPassword === repeat &&
       !loading
     );
-  }, [email, token, newPassword, repeat, loading]);
+  }, [token, newPassword, repeat, loading]);
 
   async function onSubmit(e) {
     e.preventDefault();
     setError("");
 
-    if (!email || !token) return setError("Link inválido.");
-    if (!strongPassword(newPassword)) return setError("Contraseña débil: mínimo 8 caracteres con letras y números.");
-    if (newPassword !== repeat) return setError("Las contraseñas no coinciden.");
+    if (!token) return setError("Link inválido o expirado.");
+    if (!strongPassword(newPassword))
+      return setError("Contraseña débil: mínimo 8 caracteres con letras y números.");
+    if (newPassword !== repeat)
+      return setError("Las contraseñas no coinciden.");
 
     setLoading(true);
     try {
-      // ✅ Cambiado newPassword -> password para que coincida con el backend
-      await resetPassword({ email, token, password: newPassword });
+      // ✅ BACKEND ESPERA SOLO token + password
+      await resetPassword({ token, password: newPassword });
       setOk(true);
     } catch (e2) {
       setError(e2?.message || "No se pudo cambiar la contraseña.");
@@ -73,14 +74,26 @@ export default function ResetPassword() {
           <form onSubmit={onSubmit} className="auth-form">
             <label className="field">
               <span>Nueva contraseña</span>
-              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-              <small className="hint">Mínimo 8 caracteres, letras y números.</small>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+              <small className="hint">
+                Mínimo 8 caracteres, letras y números.
+              </small>
             </label>
 
             <label className="field">
               <span>Repetir contraseña</span>
-              <input type="password" value={repeat} onChange={(e) => setRepeat(e.target.value)} />
-              {repeat && newPassword !== repeat ? <small className="hint">Las contraseñas no coinciden.</small> : null}
+              <input
+                type="password"
+                value={repeat}
+                onChange={(e) => setRepeat(e.target.value)}
+              />
+              {repeat && newPassword !== repeat ? (
+                <small className="hint">Las contraseñas no coinciden.</small>
+              ) : null}
             </label>
 
             <button className="btn btn-primary" disabled={!canSubmit}>
@@ -90,8 +103,12 @@ export default function ResetPassword() {
         ) : null}
 
         <div className="auth-links" style={{ marginTop: 10 }}>
-          <Link to="/login" className="link-muted">Ir a iniciar sesión</Link>
-          <Link to="/" className="link-muted">Inicio</Link>
+          <Link to="/login" className="link-muted">
+            Ir a iniciar sesión
+          </Link>
+          <Link to="/" className="link-muted">
+            Inicio
+          </Link>
         </div>
       </div>
     </div>

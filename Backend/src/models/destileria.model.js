@@ -18,8 +18,8 @@ const Destileria = {
 
     const [result] = await pool.query(
       `INSERT INTO destilerias
-       (nombre_comercial, descripcion, logo_url, email_contacto, telefono, direccion, ciudad, pais, sitio_web)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (nombre_comercial, descripcion, logo_url, email_contacto, telefono, direccion, ciudad, pais, sitio_web, activo)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
       [
         nombre_comercial,
         descripcion,
@@ -33,12 +33,21 @@ const Destileria = {
       ]
     );
 
-    // Retorna el ID de la destilería creada
     return result.insertId;
   },
 
-  // Obtiene todas las destilerías activas
+  // 🔒 ADMIN → obtiene TODAS (activas + inactivas)
   async obtenerTodas() {
+    const [rows] = await pool.query(
+      `SELECT *
+       FROM destilerias
+       ORDER BY created_at DESC`
+    );
+    return rows;
+  },
+
+  // 🌍 USUARIOS → SOLO activas
+  async obtenerActivas() {
     const [rows] = await pool.query(
       `SELECT *
        FROM destilerias
@@ -48,8 +57,19 @@ const Destileria = {
     return rows;
   },
 
-  // Obtiene una destilería activa por su ID
+  // 🔒 ADMIN → obtiene por ID (aunque esté inactiva)
   async obtenerPorId(id) {
+    const [rows] = await pool.query(
+      `SELECT *
+       FROM destilerias
+       WHERE id_destileria = ?`,
+      [id]
+    );
+    return rows[0];
+  },
+
+  // 🌍 USUARIOS → obtiene por ID SOLO si está activa
+  async obtenerActivaPorId(id) {
     const [rows] = await pool.query(
       `SELECT *
        FROM destilerias
@@ -100,7 +120,7 @@ const Destileria = {
     );
   },
 
-  // Desactiva una destilería (soft delete)
+  // 🔴 DESACTIVAR (SOFT DELETE)
   async desactivar(id) {
     await pool.query(
       `UPDATE destilerias
@@ -109,19 +129,17 @@ const Destileria = {
       [id]
     );
   },
-  
-  // Vuelve a mostrar una destilería (reactivar)
-async mostrar(id) {
-  await pool.query(
-    `UPDATE destilerias
-     SET activo = 1
-     WHERE id_destileria = ?`,
-    [id]
-  );
+
+  // 🟢 REACTIVAR
+  async mostrar(id) {
+    await pool.query(
+      `UPDATE destilerias
+       SET activo = 1
+       WHERE id_destileria = ?`,
+      [id]
+    );
   }
 
 };
-
-
 
 export default Destileria;

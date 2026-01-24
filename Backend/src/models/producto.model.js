@@ -2,7 +2,9 @@ import pool from '../config/db.js';
 
 class Producto {
 
-  //admin
+  // =========================
+  // ADMIN
+  // =========================
 
   static async crear(data) {
     const [result] = await pool.query(
@@ -10,6 +12,16 @@ class Producto {
       [data]
     );
     return result.insertId;
+  }
+
+  // 🔹 ADMIN LIST (AGREGADO – NO REEMPLAZA NADA)
+  static async obtenerTodosAdmin() {
+    const [rows] = await pool.query(`
+      SELECT *
+      FROM productos
+      ORDER BY created_at DESC
+    `);
+    return rows;
   }
 
   static async obtenerTodos() {
@@ -42,6 +54,7 @@ class Producto {
     );
   }
 
+  // 🔴 OCULTAR (soft delete)
   static async desactivar(id) {
     await pool.query(
       'UPDATE productos SET activo = 0 WHERE id_producto = ?',
@@ -49,7 +62,17 @@ class Producto {
     );
   }
 
-  //publico
+  // 🟢 MOSTRAR / REACTIVAR
+  static async activar(id) {
+    await pool.query(
+      'UPDATE productos SET activo = 1 WHERE id_producto = ?',
+      [id]
+    );
+  }
+
+  // =========================
+  // PÚBLICO
+  // =========================
 
   static async obtenerPublicos() {
     const [rows] = await pool.query(`
@@ -57,7 +80,10 @@ class Producto {
         p.id_producto,
         p.nombre,
         p.descripcion,
+        p.categoria,
         p.precio,
+        p.stock,
+        p.contenido_neto,
         p.grado_alcoholico,
         p.imagen_url,
         p.id_destileria
@@ -77,7 +103,10 @@ class Producto {
         p.id_producto,
         p.nombre,
         p.descripcion,
+        p.categoria,
         p.precio,
+        p.stock,
+        p.contenido_neto,
         p.grado_alcoholico,
         p.imagen_url,
         p.id_destileria
@@ -99,7 +128,10 @@ class Producto {
         p.id_producto,
         p.nombre,
         p.descripcion,
+        p.categoria,
         p.precio,
+        p.stock,
+        p.contenido_neto,
         p.grado_alcoholico,
         p.imagen_url
       FROM productos p

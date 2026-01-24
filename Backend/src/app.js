@@ -1,6 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 import usuarioRoutes from './routes/usuario.routes.js';
 import authRoutes from './routes/auth.routes.js';
@@ -14,16 +17,32 @@ import passwordRoutes from "./routes/password.routes.js";
 
 const app = express();
 
+/* =========================
+   CORS (ARREGLADO)
+========================= */
 app.use(
   cors({
     origin: "http://localhost:5173",
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-app.use(express.json());
 
+/* =========================
+   BODY PARSER
+========================= */
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+/* =========================
+   ARCHIVOS
+========================= */
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
+/* =========================
+   RUTAS
+========================= */
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/destilerias', destileriaRoutes);
@@ -32,13 +51,24 @@ app.use('/api/bartenders', bartenderRoutes);
 app.use('/api/cocteles', coctelRoutes);
 app.use('/api/favoritos', favoritosRoutes);
 app.use('/api/deseos', deseosRoutes);
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
-app.use("/api/password", passwordRoutes);
+app.use('/api/password', passwordRoutes);
 
-
-
+/* =========================
+   HEALTH
+========================= */
 app.get('/', (req, res) => {
   res.send('Backend funcionando');
+});
+
+/* =========================
+   ERROR GLOBAL
+========================= */
+app.use((err, req, res, next) => {
+  console.error('🔥 ERROR GLOBAL:', err);
+  res.status(500).json({
+    message: 'Error interno del servidor',
+    error: err.message,
+  });
 });
 
 export default app;

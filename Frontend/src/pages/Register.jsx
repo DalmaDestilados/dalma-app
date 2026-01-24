@@ -46,8 +46,15 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const age = useMemo(() => calcAgeFromBirthDate(fechaNacimiento), [fechaNacimiento]);
-  const isAdult = useMemo(() => typeof age === "number" && age >= 18, [age]);
+  const age = useMemo(
+    () => calcAgeFromBirthDate(fechaNacimiento),
+    [fechaNacimiento]
+  );
+
+  const isAdult = useMemo(
+    () => typeof age === "number" && age >= 18,
+    [age]
+  );
 
   const canSubmit = useMemo(() => {
     const baseOk =
@@ -69,39 +76,49 @@ export default function Register() {
     }
     return true;
   }, [
-    nombre, email, fechaNacimiento, age, confirm18,
-    password, repeatPassword, telefono, loading, tipoCuenta, region,
+    nombre,
+    email,
+    fechaNacimiento,
+    age,
+    confirm18,
+    password,
+    repeatPassword,
+    telefono,
+    loading,
+    tipoCuenta,
+    region,
   ]);
 
   async function onSubmit(e) {
-    e.preventDefault();
-    setError("");
+  e.preventDefault();
+  setError("");
 
-    const cleanNombre = nombre.trim();
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanTelefono = telefono.trim();
-    const cleanRegion = region.trim();
+  const cleanNombre = nombre.trim();
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanTelefono = telefono.trim();
 
-    setLoading(true);
-    try {
-      // Ahora usamos solo 'register' y enviamos tipoCuenta
-      await register({
-        nombre: cleanNombre,
-        email: cleanEmail,
-        password,
-        fecha_nacimiento: fechaNacimiento,
-        telefono: cleanTelefono || null,
-        tipoCuenta: tipoCuenta, // 'user' o 'bartender'
-        region: tipoCuenta === "bartender" ? cleanRegion : undefined
-      });
+  setLoading(true);
+  try {
+    await register({
+      nombre: cleanNombre,
+      email: cleanEmail,
+      password,
+      fecha_nacimiento: fechaNacimiento, // ✅ AHORA SÍ
+      telefono: cleanTelefono || null,
+      tipoCuenta: tipoCuenta, // "user" | "bartender"
+    });
 
-      navigate("/verify-email", { replace: true, state: { email: cleanEmail, justRegistered: true } });
-    } catch (err) {
-      setError(err?.message || "No se pudo crear la cuenta.");
-    } finally {
-      setLoading(false);
-    }
+    navigate("/verify-email", {
+      replace: true,
+      state: { email: cleanEmail, justRegistered: true },
+    });
+  } catch (err) {
+    setError(err?.message || "No se pudo crear la cuenta.");
+  } finally {
+    setLoading(false);
   }
+}
+
 
   return (
     <div className="auth-wrap">
@@ -112,7 +129,9 @@ export default function Register() {
           <div>
             <div className="auth-title">Crear cuenta</div>
             <div className="auth-subtitle">
-              {tipoCuenta === "bartender" ? "Perfil bartender (pro)" : "Cuenta personal"}
+              {tipoCuenta === "bartender"
+                ? "Perfil bartender (pro)"
+                : "Cuenta personal"}
             </div>
           </div>
         </div>
@@ -122,32 +141,110 @@ export default function Register() {
         <form onSubmit={onSubmit} className="auth-form">
           <label className="field">
             <span>Tipo de registro *</span>
-            <select value={tipoCuenta} onChange={(e) => setTipoCuenta(e.target.value)} className="select">
+            <select
+              value={tipoCuenta}
+              onChange={(e) => setTipoCuenta(e.target.value)}
+              className="select"
+            >
               <option value="user">Usuario</option>
               <option value="bartender">Bartender (perfil pro)</option>
             </select>
-            {tipoCuenta === "bartender" && <small className="hint">Perfil bartender requiere ubicación y pago.</small>}
+            {tipoCuenta === "bartender" && (
+              <small className="hint">
+                Perfil bartender requiere ubicación y pago.
+              </small>
+            )}
           </label>
 
-          <label className="field"><span>Nombre *</span><input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Tu nombre" /></label>
-          <label className="field"><span>Email *</span><input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nombre@correo.com" /></label>
-          <label className="field"><span>Fecha de nacimiento *</span><input type="date" value={fechaNacimiento} onChange={(e) => setFechaNacimiento(e.target.value)} /></label>
-          <label className="check"><input type="checkbox" checked={confirm18} onChange={(e) => setConfirm18(e.target.checked)} disabled={!isAdult} /> <span>Confirmo que tengo 18 años o más</span></label>
+          <label className="field">
+            <span>Nombre *</span>
+            <input
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              placeholder="Tu nombre"
+            />
+          </label>
 
-          {tipoCuenta === "bartender" && <label className="field"><span>Región / Ubicación *</span><input value={region} onChange={(e) => setRegion(e.target.value)} placeholder="Ej: Coquimbo, Chile" /></label>}
+          <label className="field">
+            <span>Email *</span>
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="nombre@correo.com"
+            />
+          </label>
 
-          <label className="field"><span>Password *</span><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min 8, letras y números" /></label>
-          <label className="field"><span>Repetir password *</span><input type="password" value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} placeholder="Repite tu contraseña" /></label>
-          <label className="field"><span>Teléfono (opcional)</span><input value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="+56 9 1234 5678" /></label>
+          <label className="field">
+            <span>Fecha de nacimiento *</span>
+            <input
+              type="date"
+              value={fechaNacimiento}
+              onChange={(e) => setFechaNacimiento(e.target.value)}
+            />
+          </label>
 
-          <button className="btn btn-primary" disabled={!canSubmit}>{loading ? "Creando..." : "Registrarme"}</button>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={confirm18}
+              onChange={(e) => setConfirm18(e.target.checked)}
+              disabled={!isAdult}
+            />
+            <span>Confirmo que tengo 18 años o más</span>
+          </label>
+
+          {tipoCuenta === "bartender" && (
+            <label className="field">
+              <span>Región / Ubicación *</span>
+              <input
+                value={region}
+                onChange={(e) => setRegion(e.target.value)}
+                placeholder="Ej: Coquimbo, Chile"
+              />
+            </label>
+          )}
+
+          <label className="field">
+            <span>Password *</span>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Min 8, letras y números"
+            />
+          </label>
+
+          <label className="field">
+            <span>Repetir password *</span>
+            <input
+              type="password"
+              value={repeatPassword}
+              onChange={(e) => setRepeatPassword(e.target.value)}
+              placeholder="Repite tu contraseña"
+            />
+          </label>
+
+          <label className="field">
+            <span>Teléfono (opcional)</span>
+            <input
+              value={telefono}
+              onChange={(e) => setTelefono(e.target.value)}
+              placeholder="+56 9 1234 5678"
+            />
+          </label>
+
+          <button className="btn btn-primary" disabled={!canSubmit}>
+            {loading ? "Creando..." : "Registrarme"}
+          </button>
         </form>
 
         <div className="auth-links">
           <span>¿Ya tienes cuenta?</span> <Link to="/login">Iniciar sesión</Link>
         </div>
         <div className="auth-links" style={{ marginTop: 10 }}>
-          <Link to="/" className="link-muted">Volver al Inicio</Link>
+          <Link to="/" className="link-muted">
+            Volver al Inicio
+          </Link>
         </div>
       </div>
     </div>

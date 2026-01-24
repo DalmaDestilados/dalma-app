@@ -19,19 +19,26 @@ export default function AdminDestilerias() {
   const [error, setError] = useState("");
   const [editingId, setEditingId] = useState(null);
 
+  /* =============================
+     FETCH ADMIN (TODAS)
+  ============================== */
   useEffect(() => {
     fetchDestilerias();
   }, []);
 
   async function fetchDestilerias() {
     try {
-      const data = await apiFetch("/destilerias");
+      // ✅ RUTA ADMIN (activas + inactivas)
+      const data = await apiFetch("/destilerias/admin/list");
       setDestilerias(data);
     } catch {
       setError("No se pudieron cargar las destilerías (¿rol admin?)");
     }
   }
 
+  /* =============================
+     CREAR / EDITAR
+  ============================== */
   async function handleSave(e) {
     e.preventDefault();
     setLoading(true);
@@ -71,30 +78,45 @@ export default function AdminDestilerias() {
     }
   }
 
+  /* =============================
+     EDITAR
+  ============================== */
   function handleEdit(d) {
-  setEditingId(d.id_destileria);
-  setForm({
-    nombre_comercial: d.nombre_comercial || "",
-    descripcion: d.descripcion || "",
-    logo_url: d.logo_url || "",
-    email_contacto: d.email_contacto || "",
-    telefono: d.telefono || "",
-    direccion: d.direccion || "",
-    ciudad: d.ciudad || "",
-    pais: d.pais || "",
-    sitio_web: d.sitio_web || "",
-    activo: d.activo ?? 1,
-  });
-}
+    setEditingId(d.id_destileria);
+    setForm({
+      nombre_comercial: d.nombre_comercial || "",
+      descripcion: d.descripcion || "",
+      logo_url: d.logo_url || "",
+      email_contacto: d.email_contacto || "",
+      telefono: d.telefono || "",
+      direccion: d.direccion || "",
+      ciudad: d.ciudad || "",
+      pais: d.pais || "",
+      sitio_web: d.sitio_web || "",
+      activo: d.activo ?? 1,
+    });
+  }
 
-  async function handleDelete(id) {
-    if (!confirm("¿Seguro que quieres eliminar esta destilería?")) return;
-
+  /* =============================
+     ACTIVAR / DESACTIVAR (SOFT)
+  ============================== */
+  async function toggleActivo(d) {
     try {
-      await apiFetch(`/destilerias/${id}`, { method: "DELETE" });
+      if (d.activo === 1) {
+        // 🔴 DESACTIVAR → ocultar
+        await apiFetch(`/destilerias/${d.id_destileria}`, {
+          method: "DELETE",
+        });
+      } else {
+        // 🟢 ACTIVAR → volver a mostrar
+        await apiFetch(`/destilerias/${d.id_destileria}/mostrar`, {
+          method: "PATCH",
+        });
+      }
+
       await fetchDestilerias();
     } catch {
-      setError("No se pudo eliminar la destilería");
+      setError("No se pudo cambiar el estado");
     }
   }
 
@@ -128,14 +150,28 @@ export default function AdminDestilerias() {
       {/* LISTA */}
       <div className="admin-list">
         {destilerias.map(d => (
-          <div key={d.id_destileria} className="admin-card">
-            <strong>{d.nombre_comercial}</strong>
+          <div
+            key={d.id_destileria}
+            className="admin-card"
+            style={{ opacity: d.activo ? 1 : 0.4 }}
+          >
+            <strong>
+              {d.nombre_comercial}
+              {!d.activo && " (INACTIVA)"}
+            </strong>
             <span>{d.ciudad}, {d.pais}</span>
 
             <div className="admin-actions">
-              <button onClick={() => handleEdit(d)}>Editar</button>
-              <button className="danger" onClick={() => handleDelete(d.id_destileria)}>
-                Eliminar
+              <button type="button" onClick={() => handleEdit(d)}>
+                Editar
+              </button>
+
+              <button
+                type="button"
+                onClick={() => toggleActivo(d)}
+                className={d.activo ? "danger" : ""}
+              >
+                {d.activo ? "Desactivar" : "Activar"}
               </button>
             </div>
           </div>
@@ -149,29 +185,18 @@ export default function AdminDestilerias() {
           margin: 0 auto;
           padding: 24px;
         }
-
-        .admin-title {
-          margin-bottom: 16px;
-        }
-
-        .admin-error {
-          color: red;
-          margin-bottom: 12px;
-        }
-
+        .admin-error { color: red; margin-bottom: 12px; }
         .admin-form {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
           gap: 12px;
           margin-bottom: 30px;
         }
-
         .admin-form input {
           padding: 10px;
           border-radius: 10px;
           border: 1px solid #ccc;
         }
-
         .admin-form button {
           grid-column: 1 / -1;
           padding: 12px;
@@ -179,38 +204,28 @@ export default function AdminDestilerias() {
           border: none;
           background: #f28c28;
           font-weight: 900;
-          cursor: pointer;
         }
-
         .admin-list {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
           gap: 16px;
         }
-
         .admin-card {
           border: 1px solid #ddd;
           border-radius: 16px;
           padding: 14px;
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
         }
-
         .admin-actions {
           display: flex;
           gap: 8px;
           margin-top: 8px;
         }
-
         .admin-actions button {
           flex: 1;
-          border: none;
           padding: 8px;
           border-radius: 8px;
-          cursor: pointer;
+          border: none;
         }
-
         .admin-actions .danger {
           background: #e74c3c;
           color: #fff;

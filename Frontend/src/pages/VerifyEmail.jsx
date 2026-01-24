@@ -21,26 +21,25 @@ export default function VerifyEmail() {
   const [status, setStatus] = useState("idle"); // idle | verifying | ok | error
   const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    if (emailFromLink && tokenFromLink) {
-      (async () => {
-        setStatus("verifying");
-        setMessage("");
-        try {
-          // POST a /verify-email con tu AuthContext
-          const msg = await verifyEmail({ email: emailFromLink, token: tokenFromLink });
-          setStatus("ok");
-          setMessage(msg || "Correo verificado correctamente. Ya puedes iniciar sesión.");
+ useEffect(() => {
+  if (tokenFromLink) {
+    (async () => {
+      setStatus("verifying");
+      setMessage("");
+      try {
+        const msg = await verifyEmail({ token: tokenFromLink });
+        setStatus("ok");
+        setMessage(msg || "Correo verificado correctamente. Ya puedes iniciar sesión.");
 
-          // Redirige automáticamente al login después de 2 segundos
-          setTimeout(() => navigate("/login"), 2000);
-        } catch (e) {
-          setStatus("error");
-          setMessage(e?.message || "No se pudo verificar el correo.");
-        }
-      })();
-    }
-  }, [emailFromLink, tokenFromLink, verifyEmail, navigate]);
+        setTimeout(() => navigate("/login"), 2000);
+      } catch (e) {
+        setStatus("error");
+        setMessage(e?.message || "No se pudo verificar el correo.");
+      }
+    })();
+  }
+}, [tokenFromLink, verifyEmail, navigate]);
+
 
   return (
     <div className="auth-wrap">

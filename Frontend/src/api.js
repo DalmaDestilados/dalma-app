@@ -1,7 +1,7 @@
 // URL base del backend
-// Debe apuntar a /api
+// ⚠️ NO debe incluir /api
 const API_BASE =
-  import.meta.env.VITE_API_BASE || "http://localhost:3001/api";
+  import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
 // Convierte la respuesta a JSON de forma segura
 async function safeJson(res) {
@@ -34,9 +34,10 @@ export async function apiFetch(path, options = {}) {
   }
 
   // Llamada al backend
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${API_BASE}/api${path}`, {
     ...options,
-    headers
+    headers,
+    credentials: "include", // ✅ IMPORTANTE
   });
 
   const data = await safeJson(res);

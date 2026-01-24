@@ -1,30 +1,43 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import pool from '../config/db.js';
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import pool from "../config/db.js";
+import { sendMail } from "../services/mail.service.js";
 
 const ROLES = {
-  usuario: 1,
-  bartender: 2
+  user: 1,
+  bartender: 2,
+  admin: 3, // 🔥 AGREGADO
 };
 
+/* =========================
+   LOGIN
+========================= */
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     const [rows] = await pool.query(
-      'SELECT * FROM usuarios WHERE email = ?',
+      "SELECT * FROM usuarios WHERE email = ?",
       [email]
     );
 
-    if (rows.length === 0) {
-      return res.status(400).json({ error: 'Usuario no existe' });
+    if (!rows.length) {
+      return res.status(400).json({ message: "Usuario no existe" });
     }
 
     const usuario = rows[0];
 
-    const passwordOk = await bcrypt.compare(password, usuario.password);
-    if (!passwordOk) {
-      return res.status(400).json({ error: 'Contraseña incorrecta' });
+    // 🔥 ADMIN NO REQUIERE VERIFICACIÓN DE EMAIL
+    if (!usuario.email_verificado && usuario.id_rol !== ROLES.admin) {
+      return res
+        .status(401)
+        .json({ message: "Debes verificar tu correo primero" });
+    }
+
+    const ok = await bcrypt.compare(password, usuario.password);
+    if (!ok) {
+      return res.status(400).json({ message: "Contraseña incorrecta" });
     }
 
     const token = jwt.sign(
@@ -34,58 +47,138 @@ export const login = async (req, res) => {
     );
 
     res.json({
-      message: 'Login correcto',
       token,
-      usuario: {
+      user: {
         id: usuario.id_usuario,
         nombre: usuario.nombre,
-        rol: usuario.id_rol
-      }
+        email: usuario.email,
+        rol: usuario.id_rol,
+      },
     });
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error en login' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error en login" });
   }
 };
 
+/* =========================
+   REGISTER + EMAIL
+========================= */
 export const register = async (req, res) => {
   try {
-    const { nombre, email, password, edad, telefono, rol } = req.body;
+    console.log("REGISTER BODY >>>", req.body);
 
-    if (!nombre || !email || !password || !edad || !rol) {
-      return res.status(400).json({ error: 'Faltan datos obligatorios' });
+    const {
+      nombre,
+      email,
+      password,
+      fecha_nacimiento,
+      telefono,
+      tipoCuenta,
+    } = req.body;
+
+    if (!nombre || !email || !password || !fecha_nacimiento) {
+      return res.status(400).json({ message: "Faltan datos obligatorios" });
     }
+
+    const nacimiento = new Date(fecha_nacimiento);
+    const hoy = new Date();
+    let edad = hoy.getFullYear() - nacimiento.getFullYear();
+    const m = hoy.getMonth() - nacimiento.getMonth();
+    if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) edad--;
 
     if (edad < 18) {
-      return res.status(400).json({ error: 'Debes ser mayor de edad' });
+      return res.status(400).json({ message: "Debes ser mayor de edad" });
     }
 
-    if (!ROLES[rol]) {
-      return res.status(400).json({ error: 'Rol no permitido' });
-    }
+    const rol = ROLES[tipoCuenta] || ROLES.user;
 
     const [existe] = await pool.query(
-      'SELECT id_usuario FROM usuarios WHERE email = ?',
+      "SELECT id_usuario FROM usuarios WHERE email = ?",
       [email]
     );
 
-    if (existe.length > 0) {
-      return res.status(400).json({ error: 'El email ya está registrado' });
+    if (existe.length) {
+      return res.status(400).json({ message: "Email ya registrado" });
     }
 
     const hash = await bcrypt.hash(password, 10);
 
-    await pool.query(
-      `INSERT INTO usuarios (nombre, email, password, edad, telefono, id_rol)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [nombre, email, hash, edad, telefono || null, ROLES[rol]]
+    const [result] = await pool.query(
+      `INSERT INTO usuarios 
+       (nombre, email, password, edad, telefono, id_rol, email_verificado)
+       VALUES (?, ?, ?, ?, ?, ?, 0)`,
+      [nombre, email, hash, edad, telefono || null, rol]
     );
 
-    res.status(201).json({ message: 'Usuario registrado correctamente' });
+    const usuarioId = result.insertId;
 
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error en registro' });
+    const token = crypto.randomBytes(32).toString("hex");
+    const expires = new Date(Date.now() + 1000 * 60 * 60);
+
+    await pool.query(
+      `INSERT INTO email_verification_tokens 
+       (usuario_id, token, expires_at, used)
+       VALUES (?, ?, ?, 0)`,
+      [usuarioId, token, expires]
+    );
+
+    const link = `${process.env.APP_URL}/verify-email?token=${token}&email=${email}`;
+
+    await sendMail({
+      to: email,
+      subject: "Verifica tu correo - DALMA",
+      html: `<a href="${link}">Verificar correo</a>`,
+    });
+
+    res.status(201).json({
+      message: "Usuario registrado. Revisa tu correo",
+    });
+  } catch (err) {
+    console.error("🔥 REGISTER ERROR >>>", err);
+    res.status(500).json({ message: "Error en registro" });
+  }
+};
+
+/* =========================
+   VERIFY EMAIL
+========================= */
+export const verifyEmail = async (req, res) => {
+  try {
+    // 👇 aceptar token desde body O query
+    const token = req.body.token || req.query.token;
+
+    if (!token) {
+      return res.status(400).json({ message: "Token requerido" });
+    }
+
+    const [rows] = await pool.query(
+      `SELECT * FROM email_verification_tokens
+       WHERE token = ? AND used = 0 AND expires_at > NOW()
+       LIMIT 1`,
+      [token]
+    );
+
+    if (!rows.length) {
+      return res.status(400).json({ message: "Token inválido o expirado" });
+    }
+
+    const record = rows[0];
+
+    await pool.query(
+      "UPDATE usuarios SET email_verificado = 1 WHERE id_usuario = ?",
+      [record.usuario_id]
+    );
+
+    await pool.query(
+      "UPDATE email_verification_tokens SET used = 1 WHERE id = ?",
+      [record.id]
+    );
+
+    res.json({ message: "Correo verificado correctamente" });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error al verificar correo" });
   }
 };

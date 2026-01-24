@@ -6,7 +6,6 @@ import path from 'path';
 import pool from '../config/db.js';
 import { uploadProductoImage } from '../middlewares/uploadProducto.middleware.js';
 
-
 import {
   crearProducto,
   obtenerProductos,
@@ -16,49 +15,69 @@ import {
   eliminarProducto,
   obtenerProductoPublicoPorId,
   obtenerProductosPublicos,
-  obtenerProductosPublicosPorDestileria
+  obtenerProductosPublicosPorDestileria,
+  mostrarProducto
 } from '../controllers/producto.controller.js';
 
 const router = express.Router();
 const ROL_ADMIN = 3;
 
-// Rutas publicas
+/* =====================================================
+   🔓 RUTAS PÚBLICAS (SOLO PRODUCTOS ACTIVOS)
+===================================================== */
+
+// listado público
+router.get('/', obtenerProductosPublicos);
+
+// alias público
 router.get('/public', obtenerProductosPublicos);
+
+// detalle público
 router.get('/public/:id', obtenerProductoPublicoPorId);
-router.get('/public/destileria/:id_destileria', obtenerProductosPublicosPorDestileria);
 
+// productos públicos por destilería
+router.get(
+  '/public/destileria/:id_destileria',
+  obtenerProductosPublicosPorDestileria
+);
 
+/* =====================================================
+   🔐 RUTAS ADMIN
+===================================================== */
 
-// Rutas protegidas solo para ADMIN
 router.use(authMiddleware, verificarRol(ROL_ADMIN));
 
-// Crear producto
+// ✅ LISTADO ADMIN (activos + ocultos)
+router.get('/admin/list', obtenerProductos);
+
+// crear producto
 router.post('/', crearProducto);
 
-// Obtener todos los productos
-router.get('/', obtenerProductos);
-
-// Obtener producto por ID
+// obtener producto por ID (admin)
 router.get('/:id', obtenerProductoPorId);
 
-// Obtener productos por destilería
+// obtener productos por destilería (admin)
 router.get('/destileria/:id_destileria', obtenerProductosPorDestileria);
 
-// Actualizar producto
+// actualizar producto
 router.put('/:id', actualizarProducto);
 
-// Eliminar producto (soft delete)
+// 🔴 ocultar producto (soft delete)
 router.delete('/:id', eliminarProducto);
 
+// 🟢 mostrar / reactivar producto
+router.patch('/:id/mostrar', mostrarProducto);
 
-// endpoint para subir imagenes de los productos
+/* =====================================================
+   🖼️ IMÁGENES DE PRODUCTO
+===================================================== */
+
 router.post(
   '/:id/imagen',
   uploadProductoImage.single('imagen'),
   async (req, res) => {
     try {
-      const { id } = req.params; // id_producto
-      const { id_destileria } = req.body;
+      const { id } = req.params;
 
       if (!req.file) {
         return res.status(400).json({
@@ -66,7 +85,6 @@ router.post(
         });
       }
 
-      // Buscar imagen anterior
       const [rows] = await pool.query(
         'SELECT imagen_url FROM productos WHERE id_producto = ?',
         [id]
@@ -78,7 +96,7 @@ router.post(
         });
       }
 
-      // Borrar imagen anterior si existe
+      // borrar imagen anterior
       if (rows[0].imagen_url) {
         const oldPath = path.join(process.cwd(), rows[0].imagen_url);
         if (fs.existsSync(oldPath)) {
@@ -86,10 +104,8 @@ router.post(
         }
       }
 
-      //  Guardar nueva imagen
       const imagenUrl = req.file.path.replace(/\\/g, '/');
 
-      //  Actualizar BD
       await pool.query(
         'UPDATE productos SET imagen_url = ? WHERE id_producto = ?',
         [imagenUrl, id]
@@ -101,7 +117,6 @@ router.post(
       });
 
     } catch (error) {
-      console.error(error);
       res.status(500).json({
         message: 'Error al subir imagen de producto',
         error: error.message
@@ -109,11 +124,11 @@ router.post(
     }
   }
 );
+
 router.delete('/:id/imagen', async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Buscar imagen actual
     const [rows] = await pool.query(
       'SELECT imagen_url FROM productos WHERE id_producto = ?',
       [id]
@@ -127,7 +142,6 @@ router.delete('/:id/imagen', async (req, res) => {
 
     const { imagen_url } = rows[0];
 
-    // Borrar archivo físico si existe
     if (imagen_url) {
       const fullPath = path.join(process.cwd(), imagen_url);
       if (fs.existsSync(fullPath)) {
@@ -135,7 +149,6 @@ router.delete('/:id/imagen', async (req, res) => {
       }
     }
 
-    //  Limpiar BD
     await pool.query(
       'UPDATE productos SET imagen_url = NULL WHERE id_producto = ?',
       [id]
@@ -152,8 +165,5 @@ router.delete('/:id/imagen', async (req, res) => {
     });
   }
 });
-
-
-
 
 export default router;

@@ -4,43 +4,55 @@ import axios from "axios";
 const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
 
-const API = "http://localhost:3001/api/auth";
+/* =========================
+   BASES DE API
+========================= */
+const API_AUTH = "http://localhost:3001/api/auth";
+const API_PASSWORD = "http://localhost:3001/api/password";
+
+/* =========================
+   LOCKS
+========================= */
+let isLogging = false;
+let isGettingMe = false;
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [booting, setBooting] = useState(true);
   const [isAuthed, setIsAuthed] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
-  // Axios configurado para JWT
   const api = axios.create({
-    baseURL: API,
+    baseURL: API_AUTH,
+    withCredentials: true,
   });
 
-  // 👉 Agregar token automáticamente
-  api.interceptors.request.use((config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  });
-
-  // Obtener usuario autenticado
+  /* =========================
+     GET ME
+  ========================= */
   async function getMe() {
+    if (isGettingMe) return user;
+
     try {
+      isGettingMe = true;
       const res = await api.get("/me");
-      setUser(res.data.user);
-      setIsAuthed(true);
-      return res.data.user;
+      const usuario = res.data?.user || null;
+
+      if (usuario) {
+        setUser(usuario);
+        setIsAuthed(true);
+      }
+
+      return usuario;
     } catch {
-      localStorage.removeItem("token");
       setUser(null);
       setIsAuthed(false);
       return null;
+    } finally {
+      isGettingMe = false;
     }
   }
 
-  // Al cargar la app
   useEffect(() => {
     (async () => {
       await getMe();
@@ -48,54 +60,150 @@ export function AuthProvider({ children }) {
     })();
   }, []);
 
-  // Login
+  /* =========================
+     LOGIN
+  ========================= */
   async function login(form) {
+    if (isLogging) return;
+    isLogging = true;
+
+    try {
     const res = await api.post("/login", {
-      email: form.email,
-      password: form.password,
-    });
+  email: form.email,
+  password: form.password,
+});
 
-    // 👉 Guardar JWT
-    localStorage.setItem("token", res.data.token);
+const { token, user } = res.data;
 
-    setUser(res.data.usuario);
-    setIsAuthed(true);
+// 🔥 GUARDAR TOKEN
+if (token) {
+  localStorage.setItem("token", token);
+}
 
-    return res.data.usuario;
+if (user) {
+  setUser(user);
+  setIsAuthed(true);
+}
+
+return user;
+
+    } catch (err) {
+      throw new Error(
+        err.response?.data?.message || "Credenciales incorrectas"
+      );
+    } finally {
+      isLogging = false;
+    }
   }
 
-  // Registro (según tu backend)
-  async function register(form) {
-    const payload = {
+  /* =========================
+     REGISTER (ALINEADO A Register.jsx)
+  ========================= */
+async function register(form) {
+  try {
+    const res = await api.post("/register", {
       nombre: form.nombre,
       email: form.email,
       password: form.password,
-      edad: form.edad,
+      fecha_nacimiento: form.fecha_nacimiento,
       telefono: form.telefono,
-      rol: form.rol,
-    };
+      tipoCuenta: form.tipoCuenta,
+    });
 
-    const res = await api.post("/register", payload);
     return res.data;
+  } catch (err) {
+    throw new Error(
+      err.response?.data?.message || "Error al registrar usuario"
+    );
   }
+}
 
-  // Logout (frontend)
+
+  /* =========================
+     LOGOUT
+  ========================= */
   function logout() {
-    localStorage.removeItem("token");
     setUser(null);
     setIsAuthed(false);
   }
 
+  /* =========================
+     VERIFY EMAIL
+  ========================= */
+  async function verifyEmail({ token }) {
+    try {
+      const res = await api.post("/verify-email", { token });
+      return res.data?.message;
+    } catch (err) {
+      throw new Error(
+        err.response?.data?.message || "No se pudo verificar el correo"
+      );
+    }
+  }
+
+  /* =========================
+     FORGOT PASSWORD
+  ========================= */
+  async function forgotPassword(email) {
+    try {
+      const res = await axios.post(
+        `${API_PASSWORD}/forgot`,
+        { email },
+        { withCredentials: true }
+      );
+      return res.data?.message;
+    } catch (err) {
+      throw new Error(
+        err.response?.data?.message || "No se pudo enviar el correo"
+      );
+    }
+  }
+
+  /* =========================
+     RESET PASSWORD
+  ========================= */
+  async function resetPassword(data) {
+    if (isResetting) return;
+    setIsResetting(true);
+
+    try {
+      const res = await axios.post(
+        `${API_PASSWORD}/reset`,
+        data,
+        { withCredentials: true }
+      );
+      return res.data?.message;
+    } catch (err) {
+      if (err.response?.status === 429) {
+        throw new Error(
+          "Demasiados intentos. Espera un momento."
+        );
+      }
+      throw new Error(
+        err.response?.data?.message || "No se pudo cambiar la contraseña"
+      );
+    } finally {
+      setIsResetting(false);
+    }
+  }
+
+  /* =========================
+     CONTEXT
+  ========================= */
   return (
     <AuthContext.Provider
       value={{
         user,
+        usuarios: user,
         isAuthed,
         booting,
         login,
         register,
         logout,
         getMe,
+        verifyEmail,
+        forgotPassword,
+        resetPassword,
       }}
     >
       {children}

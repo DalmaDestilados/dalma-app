@@ -5,7 +5,6 @@ export const crearDestileria = async (req, res) => {
   try {
     const { nombre_comercial } = req.body;
 
-    // Validación mínima
     if (!nombre_comercial) {
       return res.status(400).json({ error: 'El nombre comercial es obligatorio' });
     }
@@ -23,7 +22,11 @@ export const crearDestileria = async (req, res) => {
   }
 };
 
-// Obtiene todas las destilerías activas
+/* =========================
+   👑 ADMIN
+========================= */
+
+// ADMIN → activas + inactivas
 export const obtenerDestilerias = async (req, res) => {
   try {
     const destilerias = await Destileria.obtenerTodas();
@@ -33,7 +36,7 @@ export const obtenerDestilerias = async (req, res) => {
   }
 };
 
-// Obtiene una destilería específica por ID
+// ADMIN → puede ver aunque esté inactiva
 export const obtenerDestileriaPorId = async (req, res) => {
   try {
     const { id } = req.params;
@@ -50,7 +53,6 @@ export const obtenerDestileriaPorId = async (req, res) => {
   }
 };
 
-// Actualiza los datos de una destilería existente
 export const actualizarDestileria = async (req, res) => {
   try {
     const { id } = req.params;
@@ -69,7 +71,7 @@ export const actualizarDestileria = async (req, res) => {
   }
 };
 
-// oculta una destilería de forma lógica (soft delete)
+// 👑 SOFT DELETE (NO BORRA)
 export const eliminarDestileria = async (req, res) => {
   try {
     const { id } = req.params;
@@ -83,7 +85,7 @@ export const eliminarDestileria = async (req, res) => {
   }
 };
 
-// Vuelve a mostrar una destilería (ADMIN)
+// 👑 REACTIVAR
 export const mostrarDestileria = async (req, res) => {
   try {
     const { id } = req.params;
@@ -97,23 +99,28 @@ export const mostrarDestileria = async (req, res) => {
   }
 };
 
+/* =========================
+   🌍 PÚBLICO (USUARIOS)
+========================= */
 
-// Obtener destilerías públicas (sin auth)
+// ✅ SOLO ACTIVAS
+// 🌍 USUARIOS → SOLO DESTILERÍAS ACTIVAS
 export const obtenerDestileriasPublicas = async (req, res) => {
   try {
-    const destilerias = await Destileria.obtenerTodas();
+    const destilerias = await Destileria.obtenerActivas();
     res.json(destilerias);
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener destilerías públicas' });
   }
 };
 
-// Obtener una destilería pública por ID
+
+// ✅ SOLO SI ESTÁ ACTIVA
 export const obtenerDestileriaPublicaPorId = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const destileria = await Destileria.obtenerPorId(id);
+    const destileria = await Destileria.obtenerActivaPorId(id);
 
     if (!destileria) {
       return res.status(404).json({ error: 'Destilería no encontrada' });
@@ -124,4 +131,3 @@ export const obtenerDestileriaPublicaPorId = async (req, res) => {
     res.status(500).json({ error: 'Error al obtener destilería pública' });
   }
 };
-

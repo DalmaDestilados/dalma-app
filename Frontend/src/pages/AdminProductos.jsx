@@ -24,9 +24,12 @@ export default function AdminProductos() {
     fetchProductos();
   }, []);
 
+  // =========================
+  // ✅ LISTADO ADMIN CORRECTO
+  // =========================
   async function fetchProductos() {
     try {
-      const res = await fetch(`${API_BASE}/api/productos`, {
+      const res = await fetch(`${API_BASE}/api/productos/admin/list`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -36,6 +39,7 @@ export default function AdminProductos() {
 
       const data = await res.json();
       setProductos(Array.isArray(data) ? data : []);
+      setError("");
     } catch (err) {
       console.error(err);
       setError("No se pudieron cargar los productos (admin)");
@@ -100,23 +104,30 @@ export default function AdminProductos() {
     });
   }
 
-  async function handleDelete(id) {
-    if (!window.confirm("¿Seguro que quieres eliminar este producto?")) return;
-
+  // =========================
+  // 🔁 OCULTAR / MOSTRAR
+  // =========================
+  async function handleToggleActivo(p) {
     try {
-      const res = await fetch(`${API_BASE}/api/productos/${id}`, {
-        method: "DELETE",
+      const url = p.activo
+        ? `${API_BASE}/api/productos/${p.id_producto}`
+        : `${API_BASE}/api/productos/${p.id_producto}/mostrar`;
+
+      const method = p.activo ? "DELETE" : "PATCH";
+
+      const res = await fetch(url, {
+        method,
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      if (!res.ok) throw new Error("Error al eliminar producto");
+      if (!res.ok) throw new Error("Error al cambiar estado");
 
-      setProductos(productos.filter(p => p.id_producto !== id));
+      await fetchProductos();
     } catch (err) {
       console.error(err);
-      setError("No se pudo eliminar el producto");
+      setError("No se pudo cambiar el estado del producto");
     }
   }
 
@@ -151,15 +162,29 @@ export default function AdminProductos() {
       {/* LISTA */}
       <div className="admin-grid">
         {productos.map(p => (
-          <div key={p.id_producto} className="admin-card">
+          <div
+            key={p.id_producto}
+            className="admin-card"
+            style={{ opacity: p.activo ? 1 : 0.45 }}
+          >
             <strong>{p.nombre}</strong>
             <span>{p.categoria}</span>
             <span>${Number(p.precio).toLocaleString()}</span>
+            <small>{p.activo ? "Activo" : "Oculto"}</small>
 
             <div className="admin-actions">
-              <button onClick={() => handleEdit(p)}>Editar</button>
-              <button className="danger" onClick={() => handleDelete(p.id_producto)}>
-                Eliminar
+              {/* ✅ FIX: type="button" */}
+              <button type="button" onClick={() => handleEdit(p)}>
+                Editar
+              </button>
+
+              {/* ✅ FIX: type="button" */}
+              <button
+                type="button"
+                className={p.activo ? "danger" : ""}
+                onClick={() => handleToggleActivo(p)}
+              >
+                {p.activo ? "Ocultar" : "Mostrar"}
               </button>
             </div>
           </div>

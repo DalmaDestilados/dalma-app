@@ -1,6 +1,8 @@
 import Producto from '../models/producto.model.js';
 
-//Admin
+// =====================
+// ADMIN
+// =====================
 
 // Crear producto
 export const crearProducto = async (req, res) => {
@@ -32,10 +34,10 @@ export const crearProducto = async (req, res) => {
   }
 };
 
-// Obtener todos los productos (admin)
+// 🔹 ADMIN LIST (AGREGADO – usa el método admin)
 export const obtenerProductos = async (req, res) => {
   try {
-    const productos = await Producto.obtenerTodos();
+    const productos = await Producto.obtenerTodosAdmin();
     res.json(productos);
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener productos' });
@@ -87,7 +89,7 @@ export const actualizarProducto = async (req, res) => {
   }
 };
 
-// Desactivar producto
+// 🔴 Ocultar producto (soft delete)
 export const eliminarProducto = async (req, res) => {
   try {
     const { id } = req.params;
@@ -98,9 +100,21 @@ export const eliminarProducto = async (req, res) => {
   }
 };
 
-//publico
+// 🟢 MOSTRAR producto
+export const mostrarProducto = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Producto.activar(id);
+    res.json({ message: 'Producto activado correctamente' });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al activar producto' });
+  }
+};
 
-// Obtener productos públicos
+// =====================
+// PÚBLICO
+// =====================
+
 export const obtenerProductosPublicos = async (req, res) => {
   try {
     const productos = await Producto.obtenerPublicos();
@@ -110,7 +124,6 @@ export const obtenerProductosPublicos = async (req, res) => {
   }
 };
 
-// Obtener producto público por ID
 export const obtenerProductoPublicoPorId = async (req, res) => {
   try {
     const { id } = req.params;
@@ -126,7 +139,6 @@ export const obtenerProductoPublicoPorId = async (req, res) => {
   }
 };
 
-// Obtener productos públicos por destilería
 export const obtenerProductosPublicosPorDestileria = async (req, res) => {
   try {
     const { id_destileria } = req.params;
