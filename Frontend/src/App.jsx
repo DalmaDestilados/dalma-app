@@ -1,7 +1,12 @@
 import React, { useState } from "react";
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import AdminDestilerias from "./pages/AdminDestilerias.jsx";
-import AdminProductos from "./pages/AdminProductos.jsx"; 
+import AdminProductos from "./pages/AdminProductos.jsx";
+import AdminCocteles from "./pages/AdminCocteles.jsx";
+import EventsList from "./pages/EventsList.jsx";
+import ProducerEvents from "./pages/ProducerEvents.jsx";
+
+
 
 import Header from "./components/Header.jsx";
 import BottomNav from "./components/BottomNav.jsx";
@@ -20,7 +25,7 @@ import ProducersList from "./pages/ProducersList.jsx";
 import ProducerDetail from "./pages/ProducerDetail.jsx";
 import ProductList from "./pages/ProductList.jsx";
 import ProductDetail from "./pages/ProductDetail.jsx";
-import CoctailList from "./pages/CoctailList.jsx"; 
+import CoctailList from "./pages/CoctailList.jsx";
 import CoctailDetail from "./pages/CoctailDetail.jsx";
 
 // NUEVAS PÁGINAS
@@ -121,7 +126,7 @@ export default function App() {
             element={<ProducerDetail />}
           />
 
-          {/*RUTA DE DESTILERÍA */}
+          {/* RUTA DE DESTILERÍA */}
           <Route
             path="/productores/:producerId/productos"
             element={<ProductList />}
@@ -133,6 +138,10 @@ export default function App() {
             path="/productos/:productId"
             element={<ProductDetail />}
           />
+
+          {/* 🔁 ALIAS PARA SKUS (FIX BUSCADOR / CARRUSEL) */}
+          <Route path="/skus" element={<ProductList />} />
+          <Route path="/skus/:id" element={<ProductDetail />} />
 
           {/* Cócteles protegidos */}
           <Route
@@ -162,10 +171,42 @@ export default function App() {
             }
           />
 
+          {/* Admin productos por destilería */}
           <Route
-          path="/admin/destilerias/:idDestileria/productos"
-          element={<AdminProductos />}
+            path="/admin/destilerias/:idDestileria/productos"
+            element={<AdminProductos />}
           />
+
+          {/* 🔥 NUEVO: ADMIN CÓCTELES POR DESTILERÍA */}
+          <Route
+            path="/admin/destilerias/:idDestileria/cocteles"
+            element={
+              <ProtectedRoute>
+                <AdminCocteles />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* EVENTOS & TURISMO (GLOBAL) */}
+<Route
+  path="/eventos"
+  element={
+    <ProtectedRoute>
+      <EventsList />
+    </ProtectedRoute>
+  }
+/>
+
+{/* EVENTOS & TURISMO POR DESTILERÍA */}
+<Route
+  path="/productores/:producerId/eventos"
+  element={
+    <ProtectedRoute>
+      <ProducerEvents />
+    </ProtectedRoute>
+  }
+/>
+
 
           {/* fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-/* ===== IMAGEN LOCAL DEL CÓCTEL ===== */
+/* ===== IMAGEN LOCAL DEL CÓCTEL (FALLBACK) ===== */
 import coctelImg from "../assets/Cocteles/Coctel1.jpg";
+
+const API_BASE = "http://localhost:3001";
 
 export default function CoctelDetail() {
   const { cocktailId } = useParams(); // ✅ FIX
@@ -11,8 +13,16 @@ export default function CoctelDetail() {
   const [coctel, setCoctel] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  /* =========================
+     🔥 FIX IMAGEN (IGUAL AL LIST)
+  ========================= */
+  function getImageUrl(path) {
+    if (!path) return null;
+    return `${API_BASE}/${path.replace(/^\/+/, "").replace(/\\/g, "/")}`;
+  }
+
   useEffect(() => {
-    fetch(`http://localhost:3001/api/cocteles/public/${cocktailId}`) // ✅ FIX
+    fetch(`${API_BASE}/api/cocteles/public/${cocktailId}`)
       .then((res) => {
         if (!res.ok) throw new Error("Error al cargar cóctel");
         return res.json();
@@ -21,6 +31,32 @@ export default function CoctelDetail() {
       .catch(() => setCoctel(null))
       .finally(() => setLoading(false));
   }, [cocktailId]);
+
+  /* =========================
+     🔥 FIX INGREDIENTES
+     - ARRAY → OK
+     - STRING (GROUP_CONCAT) → OK
+  ========================= */
+  const ingredientesNormalizados = useMemo(() => {
+    if (!coctel?.ingredientes) return [];
+
+    // Caso 1: vienen como array [{ ingrediente, cantidad }]
+    if (Array.isArray(coctel.ingredientes)) {
+      return coctel.ingredientes;
+    }
+
+    // Caso 2: vienen como string "Limón, Azúcar, Hielo"
+    if (typeof coctel.ingredientes === "string") {
+      return coctel.ingredientes
+        .split(",")
+        .map((i) => ({
+          ingrediente: i.trim(),
+          cantidad: null,
+        }));
+    }
+
+    return [];
+  }, [coctel]);
 
   if (loading) return <p style={{ padding: 20 }}>Cargando…</p>;
   if (!coctel) return <p style={{ padding: 20 }}>Cóctel no encontrado</p>;
@@ -37,7 +73,14 @@ export default function CoctelDetail() {
 
       {/* IMAGEN */}
       <div className="cd-image">
-        <img src={coctelImg} alt={coctel.nombre} />
+        <img
+          src={
+            coctel.imagen_url
+              ? getImageUrl(coctel.imagen_url)
+              : coctelImg
+          }
+          alt={coctel.nombre}
+        />
 
         <button className="cd-fav">
           🔖<br />Agregar a<br />favoritos
@@ -49,8 +92,11 @@ export default function CoctelDetail() {
         <h3>Ingredientes</h3>
 
         <div className="cd-ingredients">
-          {coctel.ingredientes?.map((i, idx) => (
-            <div key={idx}>{i.ingrediente}</div>
+          {ingredientesNormalizados.map((i, idx) => (
+            <div key={idx}>
+              <strong>{i.ingrediente}</strong>
+              {i.cantidad && <div>{i.cantidad}</div>}
+            </div>
           ))}
         </div>
       </section>

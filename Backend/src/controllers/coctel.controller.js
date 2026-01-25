@@ -1,6 +1,6 @@
 import Coctel from '../models/coctel.model.js';
 import CoctelIngrediente from '../models/coctelIngrediente.model.js';
-import pool from '../config/db.js'; // ✅ AGREGADO
+import pool from '../config/db.js';
 
 const ROL_USUARIO = 1;
 const ROL_BARTENDER = 2;
@@ -21,8 +21,7 @@ export const crearCoctel = async (req, res) => {
     const {
       nombre,
       descripcion,
-      destilado_principal,
-      ingredientes
+      destilado_principal
     } = req.body;
 
     const {
@@ -32,14 +31,22 @@ export const crearCoctel = async (req, res) => {
       id_bartender
     } = req.usuario;
 
-    if (!nombre || !destilado_principal || !ingredientes?.length) {
+    // ✅ FIX: NO validar ingredientes aquí
+    if (!nombre || !destilado_principal) {
       return res.status(400).json({
-        error: 'Nombre, destilado principal e ingredientes son obligatorios'
+        error: 'Nombre y destilado principal son obligatorios'
       });
     }
 
     let total = 0;
-    const data = { nombre, descripcion, destilado_principal };
+
+    // 🔥 FIX REAL: activo = 1
+    const data = { 
+      nombre, 
+      descripcion, 
+      destilado_principal,
+      activo: 1
+    };
 
     if (rol === ROL_USUARIO) {
       total = await Coctel.contarPorUsuario(id);
@@ -69,13 +76,10 @@ export const crearCoctel = async (req, res) => {
 
     const id_coctel = await Coctel.crear(data);
 
-    for (const ing of ingredientes) {
-      await CoctelIngrediente.agregar(
-        id_coctel,
-        ing.ingrediente,
-        ing.cantidad
-      );
-    }
+    // ❌ IMPORTANTE:
+    // Los ingredientes se guardan en:
+    // POST /cocteles/:id/ingredientes
+    // (NO aquí)
 
     res.status(201).json({
       message: 'Cóctel creado correctamente',
@@ -89,7 +93,7 @@ export const crearCoctel = async (req, res) => {
 };
 
 // ======================
-// OBTENER CÓCTELES PÚBLICOS ✅ FIX REAL
+// OBTENER CÓCTELES PÚBLICOS
 // ======================
 export const obtenerCoctelesPublicos = async (req, res) => {
   try {

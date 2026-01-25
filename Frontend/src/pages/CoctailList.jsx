@@ -1,12 +1,22 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
+const API_BASE = "http://localhost:3001";
+
 export default function CoctailList() {
   const [cocteles, setCocteles] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState("");
   const [searchMode, setSearchMode] = useState(null); // nombre | destilado | ingrediente
+
+  /* =========================
+     🔥 FIX IMÁGENES
+  ========================= */
+  function getImageUrl(path) {
+    if (!path) return null;
+    return `${API_BASE}/${path.replace(/^\/+/, "").replace(/\\/g, "/")}`;
+  }
 
   useEffect(() => {
     // ✅ RUTA PÚBLICA CORRECTA
@@ -24,14 +34,18 @@ export default function CoctailList() {
   }, []);
 
   /* ===========================
-     FILTRO REAL (FIX)
+     FILTRO REAL (FIX DEFINITIVO)
   =========================== */
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
     if (!s) return cocteles;
 
     return cocteles.filter((c) => {
-      const ingredientesText = String(c.ingredientes || "").toLowerCase();
+      // 🔥 FIX: ingredientes vienen como STRING (GROUP_CONCAT)
+      const ingredientesText =
+        typeof c.ingredientes === "string"
+          ? c.ingredientes.toLowerCase()
+          : "";
 
       if (searchMode === "nombre") {
         return c.nombre?.toLowerCase().includes(s);
@@ -173,52 +187,61 @@ export default function CoctailList() {
 
       {/* LISTA */}
       <div style={{ padding: "0 16px 24px" }}>
-        {filtered.map((c) => (
-          <Link
-            key={c.id_coctel}
-            to={`/cocteles/${c.id_coctel}`}
-            style={{ textDecoration: "none", color: "inherit" }}
-          >
-            <div
-              style={{
-                display: "flex",
-                gap: 12,
-                background: "#ffe1c8",
-                borderRadius: 10,
-                padding: 10,
-                marginBottom: 12,
-              }}
+        {filtered.map((c) => {
+          // 🔥 FIX VISUAL: ingredientes string
+          const ingredientesText =
+            typeof c.ingredientes === "string"
+              ? c.ingredientes
+              : "";
+
+          return (
+            <Link
+              key={c.id_coctel}
+              to={`/cocteles/${c.id_coctel}`}
+              style={{ textDecoration: "none", color: "inherit" }}
             >
               <div
                 style={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: 8,
-                  background: c.imagen_url
-                    ? `url(http://localhost:3001/${c.imagen_url})`
-                    : "linear-gradient(135deg,#eee,#ddd)",
-                  backgroundSize: "cover",
+                  display: "flex",
+                  gap: 12,
+                  background: "#ffe1c8",
+                  borderRadius: 10,
+                  padding: 10,
+                  marginBottom: 12,
                 }}
-              />
+              >
+                <div
+                  style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: 8,
+                    backgroundImage: c.imagen_url
+                      ? `url(${getImageUrl(c.imagen_url)})`
+                      : "linear-gradient(135deg,#eee,#ddd)",
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                  }}
+                />
 
-              <div>
-                <div style={{ fontSize: 12, color: "#555" }}>
-                  Nombre del Mixólogo creador
-                </div>
+                <div>
+                  <div style={{ fontSize: 12, color: "#555" }}>
+                    Nombre del Mixólogo creador
+                  </div>
 
-                <div style={{ fontWeight: 700 }}>
-                  {highlight(c.nombre)}
-                </div>
+                  <div style={{ fontWeight: 700 }}>
+                    {highlight(c.nombre)}
+                  </div>
 
-                <div style={{ fontSize: 13 }}>
-                  {searchMode === "ingrediente"
-                    ? highlight(c.ingredientes)
-                    : highlight(c.destilado_principal)}
+                  <div style={{ fontSize: 13 }}>
+                    {searchMode === "ingrediente"
+                      ? highlight(ingredientesText)
+                      : highlight(c.destilado_principal)}
+                  </div>
                 </div>
               </div>
-            </div>
-          </Link>
-        ))}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

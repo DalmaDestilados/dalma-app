@@ -1,6 +1,5 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { products, producers } from "../data.js";
 
 // =========================
 // Función de búsqueda y filtro
@@ -51,9 +50,50 @@ function BottleSVG({ style }) {
   );
 }
 export default function Home({ searchTerm = "", category = "Todos" }) {
-  // Función segura para obtener productor por ID
+  const [products, setProducts] = useState([]);
+  const [producers, setProducers] = useState([]);
+
+  useEffect(() => {
+    fetch("http://localhost:3001/api/productos/public")
+      .then((r) => r.json())
+      .then((d) => setProducts(d || []))
+      .catch(() => setProducts([]));
+
+    fetch("http://localhost:3001/api/destilerias/public")
+      .then((r) => r.json())
+      .then((d) => setProducers(d || []))
+      .catch(() => setProducers([]));
+  }, []);
+
   const getProducer = (producerId) =>
-    producers.find((x) => String(x.id) === String(producerId));
+    producers.find(
+      (x) => String(x.id_destileria) === String(producerId)
+    );
+
+  // =========================
+// 🔍 BUSCADOR GLOBAL POR SECCIONES
+// =========================
+const searchLower = searchTerm.trim().toLowerCase();
+
+const searchedProducts = useMemo(() => {
+  if (!searchLower) return [];
+  return products.filter((p) => {
+    const pr = getProducer(p.id_destileria);
+    return (
+      p.nombre?.toLowerCase().includes(searchLower) ||
+      p.categoria?.toLowerCase().includes(searchLower) ||
+      pr?.nombre_comercial?.toLowerCase().includes(searchLower)
+    );
+  });
+}, [searchLower, products, producers]);
+
+
+const searchedProducers = useMemo(() => {
+  if (!searchLower) return [];
+  return producers.filter((d) =>
+    d.nombre_comercial?.toLowerCase().includes(searchLower)
+  );
+}, [searchLower, producers]);
 
   // =========================
   // Filtrado top rated
@@ -143,7 +183,7 @@ export default function Home({ searchTerm = "", category = "Todos" }) {
       bg: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=1400&q=60",
     },
     {
-      to: "/productores",
+      to: "/eventos",
       label: "Eventos & Turismo",
       bg: "https://images.unsplash.com/photo-1528823872057-9c018a7bfc48?auto=format&fit=crop&w=1400&q=60",
     },
@@ -156,6 +196,55 @@ export default function Home({ searchTerm = "", category = "Todos" }) {
 
   return (
     <div className="home-wrap">
+
+      {/* =========================
+    🔍 RESULTADOS DE BÚSQUEDA
+========================= */}
+{searchLower && (
+  <section className="home-section">
+    <div className="section-title">Resultados</div>
+
+  {/* DESTILERÍAS */}
+{searchedProducers.map((d) => (
+  <Link
+    key={d.id_destileria}
+    to={`/productores/${d.id_destileria}`}
+    style={{ display: "block", marginBottom: 6 }}
+  >
+    {d.nombre_comercial}
+  </Link>
+))}
+
+
+{/* PRODUCTOS */}
+{searchedProducts.map((p) => (
+  <Link
+    key={p.id_producto}
+    to={`/productos/${p.id_producto}`}
+    style={{ display: "block", marginBottom: 6 }}
+  >
+    {p.nombre} · {p.categoria}
+  </Link>
+))}
+
+
+{searchedProducts.length === 0 &&
+  searchedProducers.length === 0 && (
+    <div style={{ opacity: 0.7 }}>
+      No se encontraron resultados
+    </div>
+)}
+
+
+    {searchedProducts.length === 0 &&
+      searchedProducers.length === 0 && (
+        <div style={{ opacity: 0.7 }}>
+          No se encontraron resultados
+        </div>
+      )}
+  </section>
+)}
+
       {/* HERO */}
       <section className="home-hero" style={{ marginTop: 4 }}>
         {heroCards.map((c) => (
@@ -455,6 +544,96 @@ export default function Home({ searchTerm = "", category = "Todos" }) {
           </div>
         </section>
       )}
+
+      <style>{`
+/* =========================
+   🔍 BUSCADOR GLOBAL HOME
+========================= */
+
+.home-section {
+  position: relative;
+  z-index: 30;
+}
+
+/* Contenedor flotante del buscador */
+.home-section:first-of-type {
+  position: sticky;
+  top: 64px; /* debajo del header */
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  margin: 12px 12px 20px;
+  padding: 14px 16px;
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.14),
+    0 2px 6px rgba(0, 0, 0, 0.08);
+  z-index: 999;
+}
+
+/* Título */
+.home-section:first-of-type .section-title {
+  font-size: 14px;
+  font-weight: 900;
+  color: #f28c28;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Subtítulos (Destilerías / Productos) */
+.home-section:first-of-type h3 {
+  font-size: 13px;
+  font-weight: 900;
+  margin-top: 10px;
+  margin-bottom: 6px;
+  color: #000;
+}
+
+/* Links de resultados */
+.home-section:first-of-type a {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 14px;
+  color: #000;
+  background: rgba(242, 140, 40, 0.12);
+  text-decoration: none;
+  transition: all 0.18s ease;
+}
+
+/* Hover */
+.home-section:first-of-type a:hover {
+  background: #f28c28;
+  color: #000;
+  transform: translateY(-1px);
+}
+
+/* Mensaje sin resultados */
+.home-section:first-of-type div[style*="opacity"] {
+  padding: 10px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* Evita que el buscador tape el HERO */
+.home-hero {
+  margin-top: 160px;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .home-section:first-of-type {
+    top: 56px;
+    padding: 12px;
+  }
+
+  .home-hero {
+    margin-top: 180px;
+  }
+}
+`}</style>
+
     </div>
   );
 }

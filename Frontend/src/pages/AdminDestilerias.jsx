@@ -56,7 +56,6 @@ export default function AdminDestilerias() {
     setLoading(true);
     setError("");
 
-    // 🔒 VALIDACIÓN GALERÍA (SOLO AL CREAR)
     if (!editingId && galeriaFiles.length < 3) {
       setError("Debes subir al menos 3 imágenes para la galería");
       setLoading(false);
@@ -64,7 +63,6 @@ export default function AdminDestilerias() {
     }
 
     try {
-      // 1️⃣ CREAR / ACTUALIZAR DESTILERÍA (SIN ARCHIVOS)
       const payload = { ...form };
       let result;
 
@@ -82,7 +80,6 @@ export default function AdminDestilerias() {
 
       const destileriaId = editingId || result.id_destileria;
 
-      // 2️⃣ LOGO
       if (logoFile) {
         const fd = new FormData();
         fd.append("imagen", logoFile);
@@ -92,7 +89,6 @@ export default function AdminDestilerias() {
         });
       }
 
-      // 3️⃣ PERSONA DESTACADA
       if (personaFile) {
         const fd = new FormData();
         fd.append("imagen", personaFile);
@@ -105,7 +101,6 @@ export default function AdminDestilerias() {
         });
       }
 
-      // 4️⃣ GALERÍA
       if (galeriaFiles.length) {
         const fd = new FormData();
         galeriaFiles.forEach((f) => fd.append("imagenes", f));
@@ -211,6 +206,7 @@ export default function AdminDestilerias() {
             <div>
               <button onClick={() => handleEdit(d)}>Editar</button>
               <button className="danger" onClick={() => handleDelete(d.id_destileria)}>Eliminar</button>
+
               <button
                 type="button"
                 className="dalma-primary-btn dalma-products-btn"
@@ -218,12 +214,20 @@ export default function AdminDestilerias() {
               >
                 Gestionar productos
               </button>
+
+              {/* 🔥 NUEVO: GESTIONAR CÓCTELES */}
+              <button
+                type="button"
+                className="dalma-primary-btn"
+                onClick={() => navigate(`/admin/destilerias/${d.id_destileria}/cocteles`)}
+              >
+                Gestionar cócteles
+              </button>
             </div>
           </li>
         ))}
       </ul>
 
-      {/* ================= CSS ================= */}
       <style>{`
         .admin-wrap {
           max-width: 420px;

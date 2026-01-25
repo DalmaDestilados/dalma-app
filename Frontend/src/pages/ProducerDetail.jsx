@@ -14,7 +14,19 @@ export default function ProducerDetail() {
   const [producer, setProducer] = useState(null);
   const [productos, setProductos] = useState([]);
   const [loadingProductos, setLoadingProductos] = useState(true);
+
+  const [cocteles, setCocteles] = useState([]);
+  const [loadingCocteles, setLoadingCocteles] = useState(true);
+
   const [slide, setSlide] = useState(0);
+
+  /* =========================
+     🔥 UTIL IMAGEN (FIX)
+  ========================= */
+  function getImageUrl(path) {
+    if (!path) return null;
+    return `${API_BASE}/${path.replace(/^\/+/, "")}`;
+  }
 
   /* =========================
      CARGAR PERFIL DESTILERÍA
@@ -52,7 +64,7 @@ export default function ProducerDetail() {
   }, [producerId, navigate]);
 
   /* =========================
-     CARGAR PRODUCTOS VINCULADOS
+     CARGAR PRODUCTOS
   ========================= */
   useEffect(() => {
     async function fetchProductos() {
@@ -75,33 +87,68 @@ export default function ProducerDetail() {
     fetchProductos();
   }, [producerId]);
 
+  /* =========================
+     CARGAR CÓCTELES (PÚBLICO)
+  ========================= */
+  /* =========================
+   CARGAR CÓCTELES (PÚBLICO + FALLBACK ADMIN)
+========================= */
+useEffect(() => {
+  async function fetchCocteles() {
+    try {
+      // 1️⃣ intento público
+      let res = await fetch(
+        `${API_BASE}/api/cocteles/public/destileria/${producerId}`
+      );
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.length > 0) {
+          setCocteles(data);
+          setLoadingCocteles(false);
+          return;
+        }
+      }
+
+      // 2️⃣ fallback admin (cuando activo ≠ 1)
+      res = await fetch(
+        `${API_BASE}/api/cocteles/destileria/${producerId}`,
+        { credentials: "include" }
+      );
+
+      if (!res.ok) throw new Error();
+
+      const data = await res.json();
+      setCocteles(data || []);
+    } catch (err) {
+      console.error("Error cargando cócteles", err);
+      setCocteles([]);
+    } finally {
+      setLoadingCocteles(false);
+    }
+  }
+
+  fetchCocteles();
+}, [producerId]);
+
+
   if (!producer) return <div className="pd-loading">Cargando…</div>;
 
   /* =========================
-     IMÁGENES CARRUSEL
+     CARRUSEL
   ========================= */
   const images = producer.galeria.length
-    ? producer.galeria.map((g) => `${API_BASE}/${g.imagen_url}`)
+    ? producer.galeria.map((g) => getImageUrl(g.imagen_url))
     : producer.logo
-    ? [`${API_BASE}/${producer.logo}`]
+    ? [getImageUrl(producer.logo)]
     : [];
 
-  /* =========================
-     ASEGURAR MÍNIMO 3 IMÁGENES PARA CARRUSEL
-  ========================= */
   const carouselImages = (() => {
     if (images.length >= 3) return images;
     if (images.length === 2) return [images[0], images[1], images[0]];
     if (images.length === 1) return [images[0], images[0], images[0]];
     return [];
   })();
-
-  const next = () =>
-    setSlide((s) => (images.length ? (s + 1) % images.length : 0));
-  const prev = () =>
-    setSlide((s) =>
-      images.length ? (s - 1 + images.length) % images.length : 0
-    );
 
   const nextCarousel = () =>
     setSlide((s) =>
@@ -117,7 +164,7 @@ export default function ProducerDetail() {
 
   return (
     <div className="pd-wrap">
-      {/* HERO / GALERÍA */}
+      {/* HERO */}
       <div
         className="pd-hero"
         style={{
@@ -136,7 +183,6 @@ export default function ProducerDetail() {
         )}
       </div>
 
-      {/* INFO */}
       <h1 className="pd-title">{producer.nombre}</h1>
 
       {(producer.ciudad || producer.pais) && (
@@ -156,34 +202,18 @@ export default function ProducerDetail() {
             <img
               src={
                 producer.persona?.imagen_url
-                  ? `${API_BASE}/${producer.persona.imagen_url}`
+                  ? getImageUrl(producer.persona.imagen_url)
                   : masterFallback
               }
+              onError={(e) => (e.currentTarget.src = masterFallback)}
               alt={producer.persona?.nombre || "Persona destacada"}
             />
             <div>
-              <strong>
-                {producer.persona?.nombre || "Maestro Destilador"}
-              </strong>
-              <div>
-                {producer.persona?.descripcion || "Destilería"}
-              </div>
+              <strong>{producer.persona?.nombre || "Maestro Destilador"}</strong>
+              <div>{producer.persona?.descripcion || "Destilería"}</div>
             </div>
           </div>
         </div>
-      </section>
-
-      {/* INFO PRODUCTOR */}
-      <section className="pd-section">
-        <h2>Información del productor</h2>
-
-        <ul className="pd-info-list">
-          <li>📍 Dirección productor</li>
-          <li>🌎 Región productor</li>
-          <li>⏰ Horario de atención</li>
-          <li>🏠 No cuenta con punto de venta propio</li>
-          <li>🧭 No cuenta con visitas turísticas guiadas</li>
-        </ul>
       </section>
 
       {/* PRODUCTOS */}
@@ -191,10 +221,6 @@ export default function ProducerDetail() {
         <h2>Nuestros productos</h2>
 
         {loadingProductos && <p>Cargando productos…</p>}
-
-        {!loadingProductos && productos.length === 0 && (
-          <p>No hay productos asociados a esta destilería.</p>
-        )}
 
         <div className="pd-products-grid">
           {productos.map((p) => (
@@ -206,66 +232,93 @@ export default function ProducerDetail() {
               <img
                 src={
                   p.imagen_url
-                    ? `${API_BASE}/${p.imagen_url}`
+                    ? getImageUrl(p.imagen_url)
                     : masterFallback
                 }
+                onError={(e) => (e.currentTarget.src = masterFallback)}
                 alt={p.nombre}
               />
               <h3>{p.nombre}</h3>
               <p>
                 {p.contenido_neto} ml · {p.grado_alcoholico}%
               </p>
-              <strong>
-                ${Number(p.precio).toLocaleString("es-CL")}
-              </strong>
+              <strong>${Number(p.precio).toLocaleString("es-CL")}</strong>
             </div>
           ))}
         </div>
       </section>
 
-       {/* EVENTO */}
-      <section className="pd-section">
-        <img className="pd-event" src={eventoImg} alt="Evento" />
-        <div className="pd-event-label">
-          Comparte en nuestros eventos y degustaciones
-        </div>
-      </section>
+{/* EVENTO */}
+<section className="pd-section">
+  <Link
+    to={`/productores/${producerId}/eventos`}
+    style={{ textDecoration: "none", color: "inherit" }}
+  >
+    <img className="pd-event" src={eventoImg} alt="Evento" />
+    <div className="pd-event-label">
+      Comparte en nuestros eventos y degustaciones
+    </div>
+  </Link>
+</section>
 
 
-      {/* CÓCTELES RECOMENDADOS */}
+      {/* CÓCTELES */}
       <section className="pd-section">
         <h2>Cócteles recomendados</h2>
 
+        {loadingCocteles && <p>Cargando cócteles…</p>}
+
+        {!loadingCocteles && cocteles.length === 0 && (
+          <p>No hay cócteles asociados a esta destilería.</p>
+        )}
+
         <div className="pd-products-grid">
-          {[1,2,3,4,5,6].map((i) => (
-            <div key={i} className="pd-product-card">
-              <img src={eventoImg} alt="Cóctel" />
-              <h3>Nombre cóctel</h3>
-              <p>Suave</p>
+          {cocteles.map((c) => (
+            <div
+              key={c.id_coctel}
+              className="pd-product-card"
+              onClick={() => navigate(`/cocteles/${c.id_coctel}`)}
+            >
+              <img
+                src={
+                  c.imagen_url
+                    ? getImageUrl(c.imagen_url)
+                    : eventoImg
+                }
+                onError={(e) => (e.currentTarget.src = eventoImg)}
+                alt={c.nombre}
+              />
+              <h3>{c.nombre}</h3>
+              <p>{c.destilado_principal}</p>
             </div>
           ))}
         </div>
       </section>
 
-     
       {/* CONTACTO */}
-      <section className="pd-section">
-        <h2>Conéctate con nosotros</h2>
+<section className="pd-section">
+  <h2>Conéctate con nosotros</h2>
 
-        <div className="pd-contact-icons">
-          <span>🌐</span>
-          <span>📷</span>
-          <span>📘</span>
-          <span>✉️</span>
-        </div>
+  <div className="pd-contact-icons">
+    <span>📞</span>
+    <span>🌐</span>
+    <span>📸</span>
+    <span>📍</span>
+  </div>
 
-        <form className="pd-contact-form">
-          <input placeholder="Nombre" />
-          <input placeholder="Teléfono" />
-          <textarea placeholder="Mensaje" />
-          <button type="button">Enviar</button>
-        </form>
-      </section>
+  <p style={{ textAlign: "center", fontSize: 13, marginBottom: 12 }}>
+    …o si prefieres, envíanos un mensaje directo acá
+  </p>
+
+  <form className="pd-contact-form">
+    <input type="text" placeholder="Nombre" />
+    <input type="tel" placeholder="Teléfono" />
+    <input type="email" placeholder="Correo electrónico" />
+    <textarea rows="3" placeholder="Mensaje"></textarea>
+    <button type="button">Enviar</button>
+  </form>
+</section>
+
 
       <Link to="/productores" className="pd-back-link">
         ← Volver a destilerías

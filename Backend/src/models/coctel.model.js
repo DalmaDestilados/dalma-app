@@ -2,8 +2,9 @@ import pool from '../config/db.js';
 
 const Coctel = {
 
-  //contador para limites
-
+  // =====================
+  // CONTADORES
+  // =====================
   async contarPorUsuario(id_usuario) {
     const [[row]] = await pool.query(
       'SELECT COUNT(*) total FROM cocteles WHERE id_usuario = ?',
@@ -28,8 +29,9 @@ const Coctel = {
     return row.total;
   },
 
-  //crear
-
+  // =====================
+  // CREAR
+  // =====================
   async crear(data) {
     const {
       nombre,
@@ -57,8 +59,9 @@ const Coctel = {
     return result.insertId;
   },
 
-  //publico
-
+  // =====================
+  // PÚBLICO
+  // =====================
   async obtenerPublicos() {
     const [rows] = await pool.query(`
       SELECT
@@ -77,7 +80,6 @@ const Coctel = {
     return rows;
   },
 
-  // 🔧 FIX AQUÍ (alineado con listado público)
   async obtenerPublicoPorId(id) {
     const [rows] = await pool.query(`
       SELECT
@@ -96,8 +98,57 @@ const Coctel = {
     return rows[0] || null;
   },
 
-  //admin 
+  // =====================
+  // 🔥 NUEVO: CÓCTEL RECOMENDADO POR PRODUCTO
+  // =====================
+  async obtenerRecomendadoPorProducto(id_producto) {
+    const [[producto]] = await pool.query(
+      `
+      SELECT categoria, id_destileria
+      FROM productos
+      WHERE id_producto = ?
+        AND activo = 1
+      `,
+      [id_producto]
+    );
 
+    if (!producto) return null;
+
+    const [[coctel]] = await pool.query(
+      `
+      SELECT
+        c.id_coctel,
+        c.nombre,
+        c.descripcion,
+        c.destilado_principal,
+        c.imagen_url
+      FROM cocteles c
+      WHERE c.activo = 1
+        AND c.destilado_principal = ?
+        AND c.id_destileria = ?
+      ORDER BY c.created_at DESC
+      LIMIT 1
+      `,
+      [producto.categoria, producto.id_destileria]
+    );
+
+    if (!coctel) return null;
+
+    const [ingredientes] = await pool.query(
+      `
+      SELECT ingrediente, cantidad
+      FROM coctel_ingredientes
+      WHERE id_coctel = ?
+      `,
+      [coctel.id_coctel]
+    );
+
+    return { ...coctel, ingredientes };
+  },
+
+  // =====================
+  // ADMIN
+  // =====================
   async obtenerPorId(id) {
     const [rows] = await pool.query(
       'SELECT * FROM cocteles WHERE id_coctel = ?',
