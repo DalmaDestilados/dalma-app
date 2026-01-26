@@ -98,26 +98,24 @@ const searchedProducers = useMemo(() => {
   // =========================
   // Filtrado top rated
   // =========================
-  const bestRated = useMemo(() => {
-    const filtered = products.filter((p) => {
-      const pr = getProducer(p.producerId);
-      return matchesSearchAndCategory({
-        searchTerm,
-        category,
-        product: p,
-        producer: pr,
-      });
-    });
-    return [...filtered].sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 12);
-  }, [searchTerm, category]);
+  // =========================
+// MEET THE BEST – 4 productos desde la DB
+// =========================
+const bestRated = useMemo(() => {
+  return products.slice(0, 4);
+}, [products]);
+
 
   // =========================
   // Carrusel de botellas
   // =========================
-  const [slide, setSlide] = useState(0);
-  const perPage = 3;
-  const totalPages = Math.max(1, Math.ceil(bestRated.length / perPage));
-  const pageItems = bestRated.slice(slide * perPage, slide * perPage + perPage);
+  // =========================
+// Carrusel de botellas (4 fijas)
+// =========================
+const [slide, setSlide] = useState(0);
+const perPage = 4;
+const totalPages = 1;
+const pageItems = bestRated;
 
   function prev() {
     setSlide((s) => (s - 1 + totalPages) % totalPages);
@@ -324,26 +322,29 @@ const searchedProducers = useMemo(() => {
                 minHeight: 190,
               }}
             >
-              {pageItems.length ? (
-                pageItems.map((p) => {
-                  const pr = getProducer(p.producerId);
-                  return (
-                    <Link
-                      key={p.id}
-                      to={`/skus/${p.id}`}
-                      style={{
-                        width: "100%",
-                        display: "grid",
-                        justifyItems: "center",
-                        gap: 8,
-                        padding: "6px 6px 2px",
-                      }}
-                      title={`${p.name} · ${pr?.name || "Productor"}`}
-                    >
-                      {p.image ? (
-                        <img
-                          src={p.image}
-                          alt={p.name}
+             {pageItems.length ? (
+  pageItems.map((p) => {
+    const pr = getProducer(p.id_destileria);
+
+    return (
+      <Link
+        key={p.id_producto}
+        to={`/productos/${p.id_producto}`}
+        style={{
+          width: "100%",
+          display: "grid",
+          justifyItems: "center",
+          gap: 8,
+          padding: "6px 6px 2px",
+        }}
+        title={`${p.nombre} · ${pr?.nombre_comercial || "Productor"}`}
+      >
+
+                     {p.imagen_url ? (
+  <img
+    src={`http://localhost:3001/${p.imagen_url}`}
+    alt={p.nombre}
+
                           style={{
                             width: "78px",
                             height: "170px",
@@ -370,10 +371,11 @@ const searchedProducers = useMemo(() => {
                           lineHeight: 1.1,
                         }}
                       >
-                        <div style={{ fontWeight: 1000, color: "#111" }}>
-                          {(p.rating || 0).toFixed(1)} ★
-                        </div>
-                        <div style={{ opacity: 0.75 }}>{p.type}</div>
+                       <div style={{ fontWeight: 1000, color: "#111" }}>
+  Producto destacado
+</div>
+<div style={{ opacity: 0.75 }}>{p.categoria}</div>
+
                       </div>
                     </Link>
                   );
