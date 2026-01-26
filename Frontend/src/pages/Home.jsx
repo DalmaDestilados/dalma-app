@@ -107,22 +107,25 @@ const bestRated = useMemo(() => {
 
 
   // =========================
-  // Carrusel de botellas
-  // =========================
-  // =========================
-// Carrusel de botellas (4 fijas)
+// Carrusel de botellas (2 visibles)
 // =========================
 const [slide, setSlide] = useState(0);
-const perPage = 4;
-const totalPages = 1;
-const pageItems = bestRated;
+const perPage = 2;
+const totalPages = Math.max(1, Math.ceil(bestRated.length / perPage));
 
-  function prev() {
-    setSlide((s) => (s - 1 + totalPages) % totalPages);
-  }
-  function next() {
-    setSlide((s) => (s + 1) % totalPages);
-  }
+const pageItems = bestRated.slice(
+  slide * perPage,
+  slide * perPage + perPage
+);
+
+function prev() {
+  setSlide((s) => (s - 1 + totalPages) % totalPages);
+}
+
+function next() {
+  setSlide((s) => (s + 1) % totalPages);
+}
+
 
   // =========================
   // Masters (2x2 fotos)
@@ -315,7 +318,7 @@ const pageItems = bestRated;
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(3, 1fr)",
+                gridTemplateColumns: "repeat(2, 1fr)",
                 gap: 10,
                 alignItems: "center",
                 justifyItems: "center",
@@ -323,27 +326,28 @@ const pageItems = bestRated;
               }}
             >
              {pageItems.length ? (
-  pageItems.map((p) => {
-    const pr = getProducer(p.id_destileria);
+                pageItems.map((p) => {
+                  const pr = getProducer(p.id_destileria);
+                  return (
+                  <Link
+                    key={p.id_producto}
+                      to={`/productos/${p.id_producto}`}
+                    style={{
+                    width: "100%",
+                    display: "grid",
+                    justifyItems: "center",
+                    gap: 8,
+                    padding: "6px 6px 2px",
+                    }}
+                    title={`${p.nombre} · ${pr?.nombre_comercial || "Productor"}`}
+                    >
 
-    return (
-      <Link
-        key={p.id_producto}
-        to={`/productos/${p.id_producto}`}
-        style={{
-          width: "100%",
-          display: "grid",
-          justifyItems: "center",
-          gap: 8,
-          padding: "6px 6px 2px",
-        }}
-        title={`${p.nombre} · ${pr?.nombre_comercial || "Productor"}`}
-      >
 
-                     {p.imagen_url ? (
-  <img
-    src={`http://localhost:3001/${p.imagen_url}`}
-    alt={p.nombre}
+                    {p.imagen_url ? (
+                        <img
+                          src={`http://localhost:3001/${p.imagen_url}`}
+                            alt={p.nombre}
+
 
                           style={{
                             width: "78px",
@@ -371,10 +375,10 @@ const pageItems = bestRated;
                           lineHeight: 1.1,
                         }}
                       >
-                       <div style={{ fontWeight: 1000, color: "#111" }}>
-  Producto destacado
-</div>
-<div style={{ opacity: 0.75 }}>{p.categoria}</div>
+                 <div style={{ fontWeight: 1000, color: "#111" }}>
+                      Producto destacado
+                </div>
+                <div style={{ opacity: 0.75 }}>{p.categoria}</div>
 
                       </div>
                     </Link>
@@ -548,10 +552,6 @@ const pageItems = bestRated;
       )}
 
       <style>{`
-/* =========================
-   🔍 BUSCADOR GLOBAL HOME
-========================= */
-
 .home-section {
   position: relative;
   z-index: 30;
