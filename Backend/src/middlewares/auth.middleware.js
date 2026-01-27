@@ -1,28 +1,26 @@
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
 
 const authMiddleware = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
-  // Debe venir: Authorization: Bearer TOKEN
-  if (!authHeader) {
-    return res.status(401).json({ error: 'Token no proporcionado' });
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Token no proporcionado" });
   }
 
-  const token = authHeader.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({ error: 'Token inválido' });
-  }
+  const token = authHeader.split(" ")[1];
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Guardamos el usuario para usarlo después
-    req.usuario = decoded; // { id, rol }
+  
+    req.user = {
+      id_usuario: decoded.id, 
+      rol: decoded.rol,
+    };
 
     next();
   } catch (error) {
-    return res.status(401).json({ error: 'Token inválido o expirado' });
+    return res.status(401).json({ error: "Token inválido o expirado" });
   }
 };
 

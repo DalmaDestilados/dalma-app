@@ -1,66 +1,32 @@
-import React, { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { apiFetch } from "../api";
+import EventModal from "../components/EventModal";
+
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
 export default function ProducerEvents() {
   const { producerId } = useParams();
 
-  /* =========================
-     EVENTOS MOCK (luego DB)
-  ========================= */
-  const allEvents = [
-    {
-      id: 1,
-      producerId: "1",
-      titulo: "Tour Destilería Premium",
-      tipo: "Turismo",
-      descripcion:
-        "Recorrido guiado por la destilería con degustación incluida y visita a barricas.",
-      fecha: "2026-02-10",
-      imagen:
-        "https://images.unsplash.com/photo-1514361892635-eae31da6f09b?auto=format&fit=crop&w=1200&q=60",
-    },
-    {
-      id: 2,
-      producerId: "1",
-      titulo: "Cata Nocturna de Autor",
-      tipo: "Evento",
-      descripcion:
-        "Cata exclusiva guiada por el maestro destilador con música en vivo.",
-      fecha: "2026-03-02",
-      imagen:
-        "https://images.unsplash.com/photo-1510626176961-4b57d4fbad03?auto=format&fit=crop&w=1200&q=60",
-    },
-    {
-      id: 3,
-      producerId: "2",
-      titulo: "Ruta del Gin Artesanal",
-      tipo: "Turismo",
-      descripcion:
-        "Experiencia sensorial recorriendo botánicos locales y procesos de destilación.",
-      fecha: "2026-02-18",
-      imagen:
-        "https://images.unsplash.com/photo-1470337458703-46ad1756a187?auto=format&fit=crop&w=1200&q=60",
-    },
-    {
-      id: 4,
-      producerId: "3",
-      titulo: "Festival de Destilados del Sur",
-      tipo: "Evento",
-      descripcion:
-        "Encuentro anual con productores, música, foodtrucks y catas abiertas.",
-      fecha: "2026-04-12",
-      imagen:
-        "https://images.unsplash.com/photo-1520975661595-6453be3f7070?auto=format&fit=crop&w=1200&q=60",
-    },
-  ];
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
-  /* =========================
-     FILTRO POR DESTILERÍA
-  ========================= */
-  const events = useMemo(
-    () => allEvents.filter((e) => String(e.producerId) === String(producerId)),
-    [producerId]
-  );
+  useEffect(() => {
+    fetchEventos();
+  }, [producerId]);
+
+  async function fetchEventos() {
+    try {
+      const data = await apiFetch(`/eventos/destileria/${producerId}`);
+      setEvents(data);
+    } catch {
+      setError("No se pudieron cargar los eventos");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="events-wrap">
@@ -69,48 +35,72 @@ export default function ProducerEvents() {
         <p>Actividades exclusivas de esta destilería</p>
 
         <Link to={`/productores/${producerId}`} className="back-btn">
-          ← Volver a la destilería
+          ← Volver
         </Link>
       </div>
 
-      {events.length === 0 ? (
+      {loading && <div className="empty">Cargando eventos...</div>}
+      {error && <div className="empty error">{error}</div>}
+
+      {!loading && events.length === 0 && (
         <div className="empty">
-          No hay eventos o actividades turísticas registradas para esta destilería.
-        </div>
-      ) : (
-        <div className="events-grid">
-          {events.map((e) => (
-            <div key={e.id} className="event-card">
-              <div
-                className="event-img"
-                style={{ backgroundImage: `url(${e.imagen})` }}
-              />
-              <div className="event-body">
-                <span className="event-type">{e.tipo}</span>
-                <h3>{e.titulo}</h3>
-                <p>{e.descripcion}</p>
-                <div className="event-footer">
-                  <span>📅 {e.fecha}</span>
-                </div>
-              </div>
-            </div>
-          ))}
+          Esta destilería aún no tiene eventos registrados.
         </div>
       )}
 
+      <div className="events-grid">
+        {events.map((e) => (
+          <div
+            key={e.id_evento}
+            className="event-card"
+            onClick={() => setSelectedEvent(e)}
+          >
+            {e.imagen_url && (
+              <div
+                className="event-img"
+                style={{
+                  backgroundImage: `url(${API_BASE}/${e.imagen_url})`,
+                }}
+              />
+            )}
+
+            <div className="event-body">
+              {e.categoria && (
+                <span className="event-type">{e.categoria}</span>
+              )}
+
+              <h3>{e.titulo}</h3>
+
+              {e.descripcion && (
+                <p className="event-description">{e.descripcion}</p>
+              )}
+
+              <div className="event-footer">
+                📅 {new Date(e.fecha).toLocaleDateString("es-CL")}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <EventModal
+        event={selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+      />
+
+      {/* ================== CSS ================== */}
       <style>{`
         .events-wrap {
-          padding: 18px;
+          padding: 16px;
         }
 
         .events-header {
-          margin-bottom: 20px;
+          margin-bottom: 18px;
         }
 
         .events-header h1 {
           font-size: 26px;
           font-weight: 900;
-          color: #111;
         }
 
         .events-header p {
@@ -120,10 +110,10 @@ export default function ProducerEvents() {
 
         .back-btn {
           display: inline-block;
-          margin-top: 10px;
+          margin-top: 6px;
           font-weight: 800;
-          text-decoration: none;
           color: #f28c28;
+          text-decoration: none;
         }
 
         .events-grid {
@@ -134,24 +124,35 @@ export default function ProducerEvents() {
 
         .event-card {
           background: #fff;
-          border-radius: 18px;
+          border-radius: 20px;
           overflow: hidden;
-          box-shadow: 0 16px 30px rgba(0,0,0,0.12);
+          box-shadow: 0 14px 30px rgba(0,0,0,0.12);
+          cursor: pointer;
+          transition: transform .2s ease;
+
+          height: 380px;
           display: flex;
           flex-direction: column;
+          position: relative;
+        }
+
+        .event-card:hover {
+          transform: translateY(-4px);
         }
 
         .event-img {
           height: 160px;
           background-size: cover;
           background-position: center;
+          flex-shrink: 0;
         }
 
         .event-body {
           padding: 14px;
           display: flex;
           flex-direction: column;
-          gap: 8px;
+          gap: 6px;
+          flex: 1;
         }
 
         .event-type {
@@ -162,14 +163,20 @@ export default function ProducerEvents() {
         }
 
         .event-body h3 {
-          font-size: 18px;
+          font-size: 17px;
           font-weight: 900;
           margin: 0;
         }
 
-        .event-body p {
+        .event-description {
           font-size: 14px;
-          opacity: 0.8;
+          line-height: 1.4;
+          opacity: 0.85;
+
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 3;
+          overflow: hidden;
         }
 
         .event-footer {
@@ -184,6 +191,30 @@ export default function ProducerEvents() {
           text-align: center;
           font-weight: 800;
           opacity: 0.7;
+        }
+
+        .error {
+          color: red;
+        }
+
+        /* ========== MOBILE ========= */
+        @media (max-width: 480px) {
+          .event-card {
+            height: 300px;
+          }
+
+          .event-img {
+            height: 130px;
+          }
+
+          .event-description {
+            -webkit-line-clamp: 1;
+            font-size: 13px;
+          }
+
+          .event-body h3 {
+            font-size: 16px;
+          }
         }
       `}</style>
     </div>

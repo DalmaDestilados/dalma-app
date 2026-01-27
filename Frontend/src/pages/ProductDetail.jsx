@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { apiFetch } from "../api";
 
 /* HERO */
 import hero1 from "../assets/Hero/Destileria3.jpg";
@@ -37,23 +37,31 @@ export default function ProductDetail() {
 
   const [product, setProduct] = useState(null);
   const [heroIndex, setHeroIndex] = useState(0);
-  const [rating, setRating] = useState(4);
+
+  // ⭐ Valoraciones
+  const [ratingAvg, setRatingAvg] = useState(0);
+  const [ratingTotal, setRatingTotal] = useState(0);
+  const [userRating, setUserRating] = useState(null);
+  const [sending, setSending] = useState(false);
+
   const [favorite, setFavorite] = useState(false);
   const [inCart, setInCart] = useState(false);
 
+  /* =========================
+     PRODUCTO
+  ========================= */
   useEffect(() => {
-    axios
-      .get(`${API_BASE}/api/productos/public/${productId}`)
-      .then((res) => {
-        if (res.data?.activo === 0) {
-          setProduct(null);
-        } else {
-          setProduct(res.data);
-        }
+    apiFetch(`/productos/public/${productId}`)
+      .then((data) => {
+        if (data?.activo === 0) setProduct(null);
+        else setProduct(data);
       })
       .catch(() => setProduct(null));
   }, [productId]);
 
+  /* =========================
+     HERO
+  ========================= */
   useEffect(() => {
     const t = setInterval(
       () => setHeroIndex((p) => (p + 1) % heroImages.length),
@@ -62,26 +70,58 @@ export default function ProductDetail() {
     return () => clearInterval(t);
   }, []);
 
-  if (!product)
-    return <div style={{ padding: 20 }}>Producto no encontrado</div>;
-
   /* =========================
-     IMAGEN REAL DEL PRODUCTO
+     VALORACIONES
   ========================= */
+  useEffect(() => {
+    apiFetch(`/valoraciones/producto/${productId}`)
+      .then((res) => {
+        setRatingAvg(res.promedio || 0);
+        setRatingTotal(res.total || 0);
+      })
+      .catch(() => {});
+
+    apiFetch(`/valoraciones/producto/${productId}/usuario`)
+      .then((res) => {
+        if (res?.puntuacion) setUserRating(res.puntuacion);
+      })
+      .catch(() => {});
+  }, [productId]);
+
+  if (!product) {
+    return <div style={{ padding: 20 }}>Producto no encontrado</div>;
+  }
+
   const bottle = product.imagen_url
     ? `${API_BASE}/${product.imagen_url}`
     : productImages[product.categoria?.toLowerCase()] || piscoImg;
 
-  const downloadPDF = () => {
-    const blob = new Blob(
-      [`Ficha técnica\n\nProducto: ${product.nombre}`],
-      { type: "application/pdf" }
-    );
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `${product.nombre}.pdf`;
-    link.click();
-  };
+  async function handleRate(value) {
+    if (sending) return;
+    setSending(true);
+
+    try {
+      await apiFetch("/valoraciones/producto", {
+        method: "POST",
+        body: JSON.stringify({
+          id_producto: productId,
+          puntuacion: value,
+        }),
+      });
+
+      setUserRating(value);
+
+      const res = await apiFetch(`/valoraciones/producto/${productId}`);
+      setRatingAvg(res.promedio || 0);
+      setRatingTotal(res.total || 0);
+    } catch (err) {
+      alert(err.message || "Error al valorar");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  const avgSafe = Number(ratingAvg || 0).toFixed(1);
 
   return (
     <div className="sku-wrap">
@@ -90,46 +130,46 @@ export default function ProductDetail() {
         className="sku-hero"
         style={{ backgroundImage: `url(${heroImages[heroIndex]})` }}
       >
-        <button className="sku-back" onClick={() => navigate(-1)}>←</button>
+        <button className="sku-back" onClick={() => navigate(-1)}>
+          ←
+        </button>
       </div>
 
       {/* BOTELLA */}
       <div className="sku-bottle-wrap">
-        <img
-          src={bottle}
-          alt={product.nombre}
-          className="sku-bottle"
-        />
+        <img src={bottle} alt={product.nombre} className="sku-bottle" />
       </div>
 
-      {/* RATING */}
+      {/* ⭐ RATING */}
       <div className="sku-rating">
-        {[1,2,3,4,5].map((n) => (
+        {[1, 2, 3, 4, 5].map((n) => (
           <span
             key={n}
-            className={rating >= n ? "on" : ""}
-            onClick={() => setRating(n)}
+            className={(userRating || ratingAvg) >= n ? "on" : ""}
+            onClick={() => handleRate(n)}
           >
             ★
           </span>
         ))}
-        <span className="sku-score">{rating}/5</span>
+        <span className="sku-score">
+          {avgSafe}/5 ({ratingTotal})
+        </span>
       </div>
 
-      {/* PRECIO */}
       <div className="sku-price">
         ${Number(product.precio).toLocaleString("es-CL")}
       </div>
+
       <div className="sku-stock">
         {product.stock > 0 ? "(Con stock disponible)" : "(Sin stock)"}
       </div>
 
       <h2 className="sku-title">{product.nombre}</h2>
+
       <div className="sku-meta">
         {product.contenido_neto} cc · {product.grado_alcoholico}% abv
       </div>
 
-      {/* ACCIONES */}
       <div className="sku-actions">
         <button onClick={() => setFavorite(!favorite)}>
           {favorite ? "❤️ Favorito" : "🤍 Favoritos"}
@@ -140,7 +180,6 @@ export default function ProductDetail() {
         <button onClick={() => alert("Compartido")}>📤 Compartir</button>
       </div>
 
-      {/* DESCRIPCIÓN */}
       <section className="sku-section">
         <h3>Descripción y notas de cata</h3>
         <p>
@@ -149,7 +188,6 @@ export default function ProductDetail() {
         </p>
       </section>
 
-      {/* RUEDA */}
       <section className="sku-section">
         <h3>Rueda de cata</h3>
         <div className="sku-wheel">
@@ -160,7 +198,6 @@ export default function ProductDetail() {
         </div>
       </section>
 
-      {/* OPINIÓN */}
       <section className="sku-section">
         <h3>Opinión del especialista</h3>
         <strong>Juan Pérez · Maestro Destilador</strong>
@@ -169,7 +206,6 @@ export default function ProductDetail() {
         </p>
       </section>
 
-      {/* CÓCTEL */}
       <section className="sku-section">
         <h3>Cóctel recomendado</h3>
         <div className="sku-cocktail">
@@ -183,18 +219,11 @@ export default function ProductDetail() {
               <li>1 clara de huevo</li>
               <li>Hielo</li>
             </ul>
-            <p>
-              Agitar todos los ingredientes en seco, luego con hielo y servir frío.
-            </p>
           </div>
         </div>
-
-        <button className="sku-pdf" onClick={downloadPDF}>
-          Descargar ficha técnica PDF
-        </button>
       </section>
 
-      {/* CSS */}
+      {/* ================= CSS ================= */}
       <style>{`
         .sku-wrap {
           max-width: 420px;
@@ -224,7 +253,6 @@ export default function ProductDetail() {
           font-size: 20px;
         }
 
-        /* BOTELLA CORRECTA */
         .sku-bottle-wrap {
           width: 170px;
           margin: -100px auto 0;
@@ -234,23 +262,7 @@ export default function ProductDetail() {
 
         .sku-bottle {
           width: 100%;
-          display: block;
           filter: drop-shadow(0 18px 28px rgba(0,0,0,.35));
-        }
-
-        /* OVERLAY QUE ELIMINA EL FONDO BLANCO */
-        .sku-bottle-wrap::after {
-          content: "";
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(
-            to bottom,
-            rgba(255,255,255,0) 0%,
-            rgba(255,255,255,0.4) 55%,
-            rgba(255,255,255,0.85) 75%,
-            #fff 100%
-          );
-          pointer-events: none;
         }
 
         .sku-rating span {
@@ -312,16 +324,6 @@ export default function ProductDetail() {
         .sku-cocktail img {
           width: 100%;
           border-radius: 12px;
-        }
-
-        .sku-pdf {
-          margin-top: 16px;
-          width: 100%;
-          padding: 14px;
-          border: none;
-          border-radius: 999px;
-          background: #f6b37f;
-          font-weight: 900;
         }
       `}</style>
     </div>
