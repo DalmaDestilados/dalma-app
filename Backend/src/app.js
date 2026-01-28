@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import dotenv from 'dotenv';
+import cookieParser from "cookie-parser";
+
 
 dotenv.config();
 
@@ -14,14 +16,15 @@ import coctelRoutes from './routes/coctel.routes.js';
 import favoritosRoutes from './routes/favoritos.routes.js';
 import deseosRoutes from './routes/deseos.routes.js';
 import passwordRoutes from "./routes/password.routes.js";
+import eventosRoutes from "./routes/eventos.routes.js";
+import valoracionesRoutes from "./routes/valoraciones.routes.js";
 
 const app = express();
 
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
-/* =========================
-   CORS (ARREGLADO)
-========================= */
+
+
 app.use(
   cors({
     origin: "http://localhost:5173",
@@ -30,6 +33,7 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+app.use(cookieParser());
 
 /* =========================
    BODY PARSER
@@ -54,6 +58,9 @@ app.use('/api/cocteles', coctelRoutes);
 app.use('/api/favoritos', favoritosRoutes);
 app.use('/api/deseos', deseosRoutes);
 app.use('/api/password', passwordRoutes);
+app.use("/api/eventos", eventosRoutes);
+app.use("/api/valoraciones", valoracionesRoutes);
+
 
 /* =========================
    HEALTH

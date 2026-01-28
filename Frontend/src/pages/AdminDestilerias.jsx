@@ -215,7 +215,7 @@ export default function AdminDestilerias() {
                 Gestionar productos
               </button>
 
-              {/* 🔥 NUEVO: GESTIONAR CÓCTELES */}
+              {/*GESTIONAR CÓCTELES */}
               <button
                 type="button"
                 className="dalma-primary-btn"
@@ -223,6 +223,18 @@ export default function AdminDestilerias() {
               >
                 Gestionar cócteles
               </button>
+
+              <button
+                type="button"
+                className="dalma-primary-btn"
+                onClick={() =>
+                  navigate(`/admin/eventos?id_destileria=${d.id_destileria}`)
+                }
+              >
+                Gestionar eventos
+              </button>
+
+
             </div>
           </li>
         ))}

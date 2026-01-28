@@ -28,10 +28,12 @@ import ProductDetail from "./pages/ProductDetail.jsx";
 import CoctailList from "./pages/CoctailList.jsx";
 import CoctailDetail from "./pages/CoctailDetail.jsx";
 
-// NUEVAS PÁGINAS
+import AdminEventos from "./pages/AdminEventos.jsx";
 import VerifyEmail from "./pages/VerifyEmail.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
+
+
 
 export default function App() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -139,7 +141,7 @@ export default function App() {
             element={<ProductDetail />}
           />
 
-          {/* 🔁 ALIAS PARA SKUS (FIX BUSCADOR / CARRUSEL) */}
+          {/* ALIAS PARA SKUS (FIX BUSCADOR / CARRUSEL) */}
           <Route path="/skus" element={<ProductList />} />
           <Route path="/skus/:id" element={<ProductDetail />} />
 
@@ -177,7 +179,7 @@ export default function App() {
             element={<AdminProductos />}
           />
 
-          {/* 🔥 NUEVO: ADMIN CÓCTELES POR DESTILERÍA */}
+          {/*  NUEVO: ADMIN CÓCTELES POR DESTILERÍA */}
           <Route
             path="/admin/destilerias/:idDestileria/cocteles"
             element={
@@ -186,26 +188,36 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          {/* ADMIN EVENTOS */}
+          <Route
+            path="/admin/eventos"
+            element={
+              <ProtectedRoute>
+                <AdminEventos />
+              </ProtectedRoute>
+            }
+          />
+          
 
           {/* EVENTOS & TURISMO (GLOBAL) */}
-<Route
-  path="/eventos"
-  element={
-    <ProtectedRoute>
-      <EventsList />
-    </ProtectedRoute>
-  }
-/>
+          <Route
+            path="/eventos"
+            element={
+              <ProtectedRoute>
+                <EventsList />
+              </ProtectedRoute>
+            }
+          />
 
-{/* EVENTOS & TURISMO POR DESTILERÍA */}
-<Route
-  path="/productores/:producerId/eventos"
-  element={
-    <ProtectedRoute>
-      <ProducerEvents />
-    </ProtectedRoute>
-  }
-/>
+          {/* EVENTOS & TURISMO POR DESTILERÍA */}
+          <Route
+            path="/productores/:producerId/eventos"
+            element={
+              <ProtectedRoute>
+                <ProducerEvents />
+              </ProtectedRoute>
+            }
+          />
 
 
           {/* fallback */}

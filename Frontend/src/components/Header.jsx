@@ -108,6 +108,13 @@ export default function Header({
             >
               🛠️ Gestionar Productos
             </button>
+
+            <button
+              className="dalma-admin-btn"
+              onClick={() => go("/admin/eventos")}
+            >
+              🛠️ Gestionar Eventos
+            </button>
           </>
         )}
 
