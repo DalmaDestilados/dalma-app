@@ -275,171 +275,186 @@ function next() {
       </section>
 
       {/* MEET THE BEST */}
-      <section className="home-section">
-        <div className="section-title" style={{ textTransform: "none" }}>
-          meet the best!
-        </div>
+<section className="home-section meet-best">
+  <div
+    className="section-title"
+    style={{ textTransform: "none" }}
+  >
+    meet the best!
+  </div>
 
-        <div
-          style={{
-            background: "#fff",
-            borderRadius: 18,
-            border: "1px solid rgba(0,0,0,0.08)",
-            boxShadow: "0 16px 32px rgba(0,0,0,0.08)",
-            padding: "14px 12px",
-          }}
-        >
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "42px 1fr 42px",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
-            <button
-              type="button"
-              onClick={prev}
-              aria-label="Anterior"
-              style={{
-                width: 42,
-                height: 42,
-                borderRadius: 14,
-                border: "1px solid rgba(0,0,0,0.10)",
-                background: "rgba(242,140,40,0.10)",
-                fontSize: 22,
-                fontWeight: 900,
-                cursor: "pointer",
-              }}
-            >
-              ‹
-            </button>
+  <div
+    style={{
+      background: "#fff",
+      borderRadius: 18,
+      border: "1px solid rgba(0,0,0,0.08)",
+      boxShadow: "0 16px 32px rgba(0,0,0,0.08)",
+      padding: "14px 12px",
+    }}
+  >
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "42px 1fr 42px",
+        alignItems: "center",
+        gap: 8,
+      }}
+    >
+      <button
+        type="button"
+        onClick={prev}
+        aria-label="Anterior"
+        style={{
+          width: 42,
+          height: 42,
+          borderRadius: 14,
+          border: "1px solid rgba(0,0,0,0.10)",
+          background: "rgba(242,140,40,0.10)",
+          fontSize: 22,
+          fontWeight: 900,
+          cursor: "pointer",
+        }}
+      >
+        ‹
+      </button>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(2, 1fr)",
-                gap: 10,
-                alignItems: "center",
-                justifyItems: "center",
-                minHeight: 190,
-              }}
-            >
-             {pageItems.length ? (
-                pageItems.map((p) => {
-                  const pr = getProducer(p.id_destileria);
-                  return (
-                  <Link
-                    key={p.id_producto}
-                      to={`/productos/${p.id_producto}`}
-                    style={{
-                    width: "100%",
-                    display: "grid",
-                    justifyItems: "center",
-                    gap: 8,
-                    padding: "6px 6px 2px",
-                    }}
-                    title={`${p.nombre} · ${pr?.nombre_comercial || "Productor"}`}
-                    >
+      {/* 👇 CARRUSEL */}
+      <div
+        className="product-carousel"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(2, 1fr)",
+          gap: 10,
+          alignItems: "center",
+          justifyItems: "center",
+          minHeight: 190,
+        }}
+      >
+        {pageItems.length ? (
+          pageItems.map((p) => {
+            const pr = getProducer(p.id_destileria);
 
-
-                    {p.imagen_url ? (
-                        <img
-                          src={`http://localhost:3001/${p.imagen_url}`}
-                            alt={p.nombre}
-
-
-                          style={{
-                            width: "78px",
-                            height: "170px",
-                            objectFit: "contain",
-                            filter: "drop-shadow(0 14px 18px rgba(0,0,0,0.18))",
-                          }}
-                        />
-                      ) : (
-                        <BottleSVG
-                          style={{
-                            width: 78,
-                            height: 170,
-                            filter: "drop-shadow(0 14px 18px rgba(0,0,0,0.18))",
-                          }}
-                        />
-                      )}
-
-                      <div
-                        style={{
-                          textAlign: "center",
-                          fontSize: 12,
-                          fontWeight: 900,
-                          color: "rgba(0,0,0,0.72)",
-                          lineHeight: 1.1,
-                        }}
-                      >
-                 <div style={{ fontWeight: 1000, color: "#111" }}>
-                      Producto destacado
-                </div>
-                <div style={{ opacity: 0.75 }}>{p.categoria}</div>
-
-                      </div>
-                    </Link>
-                  );
-                })
-              ) : (
-                <div style={{ gridColumn: "1 / -1", opacity: 0.7, fontWeight: 800 }}>
-                  No hay productos para mostrar.
-                </div>
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={next}
-              aria-label="Siguiente"
-              style={{
-                width: 42,
-                height: 42,
-                borderRadius: 14,
-                border: "1px solid rgba(0,0,0,0.10)",
-                background: "rgba(242,140,40,0.10)",
-                fontSize: 22,
-                fontWeight: 900,
-                cursor: "pointer",
-              }}
-            >
-              ›
-            </button>
-          </div>
-
-          <div
-            style={{
-              marginTop: 12,
-              height: 2,
-              background: "rgba(242,140,40,0.35)",
-              borderRadius: 999,
-            }}
-          />
-          <div
-            style={{
-              marginTop: 10,
-              display: "flex",
-              justifyContent: "center",
-              gap: 8,
-            }}
-          >
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <span
-                key={i}
+            return (
+              <Link
+                key={p.id_producto}
+                to={`/productos/${p.id_producto}`}
+                className="product-card"
                 style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: 999,
-                  background: i === slide ? "rgba(242,140,40,0.95)" : "rgba(0,0,0,0.18)",
+                  width: "100%",
+                  display: "grid",
+                  justifyItems: "center",
+                  gap: 8,
+                  padding: "6px 6px 2px",
                 }}
-              />
-            ))}
+                title={`${p.nombre} · ${pr?.nombre_comercial || "Productor"}`}
+              >
+                {p.imagen_url ? (
+                  <img
+                    src={`http://localhost:3001/${p.imagen_url}`}
+                    alt={p.nombre}
+                    style={{
+                      width: "78px",
+                      height: "170px",
+                      objectFit: "contain",
+                      filter: "drop-shadow(0 14px 18px rgba(0,0,0,0.18))",
+                    }}
+                  />
+                ) : (
+                  <BottleSVG
+                    style={{
+                      width: 78,
+                      height: 170,
+                      filter: "drop-shadow(0 14px 18px rgba(0,0,0,0.18))",
+                    }}
+                  />
+                )}
+
+                <div
+                  style={{
+                    textAlign: "center",
+                    fontSize: 12,
+                    fontWeight: 900,
+                    color: "rgba(0,0,0,0.72)",
+                    lineHeight: 1.1,
+                  }}
+                >
+                  <div style={{ fontWeight: 1000, color: "#111" }}>
+                    Producto destacado
+                  </div>
+                  <div className="category" style={{ opacity: 0.75 }}>
+                    {p.categoria}
+                  </div>
+                </div>
+              </Link>
+            );
+          })
+        ) : (
+          <div
+            style={{
+              gridColumn: "1 / -1",
+              opacity: 0.7,
+              fontWeight: 800,
+            }}
+          >
+            No hay productos para mostrar.
           </div>
-        </div>
-      </section>
+        )}
+      </div>
+
+      <button
+        type="button"
+        onClick={next}
+        aria-label="Siguiente"
+        style={{
+          width: 42,
+          height: 42,
+          borderRadius: 14,
+          border: "1px solid rgba(0,0,0,0.10)",
+          background: "rgba(242,140,40,0.10)",
+          fontSize: 22,
+          fontWeight: 900,
+          cursor: "pointer",
+        }}
+      >
+        ›
+      </button>
+    </div>
+
+    <div
+      style={{
+        marginTop: 12,
+        height: 2,
+        background: "rgba(242,140,40,0.35)",
+        borderRadius: 999,
+      }}
+    />
+
+    <div
+      style={{
+        marginTop: 10,
+        display: "flex",
+        justifyContent: "center",
+        gap: 8,
+      }}
+    >
+      {Array.from({ length: totalPages }).map((_, i) => (
+        <span
+          key={i}
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: 999,
+            background:
+              i === slide
+                ? "rgba(242,140,40,0.95)"
+                : "rgba(0,0,0,0.18)",
+          }}
+        />
+      ))}
+    </div>
+  </div>
+</section>
+
       {/* MEET THE MASTERS (título + grilla 2x2 con fotos) */}
       <section className="home-section">
         <div className="section-title" style={{ textTransform: "none" }}>
@@ -634,6 +649,8 @@ function next() {
     margin-top: 180px;
   }
 }
+  
+
 `}</style>
 
     </div>

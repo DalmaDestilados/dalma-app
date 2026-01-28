@@ -6,7 +6,10 @@ import pool from "../config/db.js";
 export const valorarProducto = async (req, res) => {
   try {
     const { id_producto, puntuacion } = req.body;
-    const id_usuario = req.user?.id_usuario;
+
+    // 🔧 compatibilidad: usuario nuevo o antiguo
+    const usuario = req.usuario || req.user;
+    const id_usuario = usuario?.id_usuario;
 
     if (!id_usuario) {
       return res.status(401).json({ message: "Usuario no autenticado" });
@@ -77,7 +80,15 @@ export const obtenerValoracionProducto = async (req, res) => {
 export const obtenerValoracionUsuario = async (req, res) => {
   try {
     const { id_producto } = req.params;
-    const id_usuario = req.user.id_usuario;
+
+    // 🔧 compatibilidad: usuario nuevo o antiguo
+    const usuario = req.usuario || req.user;
+
+    if (!usuario) {
+      return res.status(401).json({ message: "Usuario no autenticado" });
+    }
+
+    const id_usuario = usuario.id_usuario;
 
     const [[row]] = await pool.query(
       `SELECT puntuacion FROM valoraciones

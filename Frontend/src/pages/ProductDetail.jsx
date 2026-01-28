@@ -31,6 +31,18 @@ const productImages = {
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
+/* =========================
+   ⭐ NUEVO: helper rueda cata
+========================= */
+function getCata(product) {
+  return {
+    aromas: Number(product.cata_aromas ?? 0),
+    dulzor: Number(product.cata_dulzor ?? 0),
+    cuerpo: Number(product.cata_cuerpo ?? 0),
+    persistencia: Number(product.cata_persistencia ?? 0),
+  };
+}
+
 export default function ProductDetail() {
   const { productId } = useParams();
   const navigate = useNavigate();
@@ -48,6 +60,11 @@ export default function ProductDetail() {
   const [inCart, setInCart] = useState(false);
 
   /* =========================
+     🔥 NUEVO: CÓCTEL RECOMENDADO
+  ========================= */
+  const [coctelRec, setCoctelRec] = useState(null);
+
+  /* =========================
      PRODUCTO
   ========================= */
   useEffect(() => {
@@ -57,6 +74,15 @@ export default function ProductDetail() {
         else setProduct(data);
       })
       .catch(() => setProduct(null));
+  }, [productId]);
+
+  /* =========================
+     🔥 CARGAR CÓCTEL RECOMENDADO
+  ========================= */
+  useEffect(() => {
+    apiFetch(`/cocteles/public/recomendado/producto/${productId}`)
+      .then((data) => setCoctelRec(data))
+      .catch(() => setCoctelRec(null));
   }, [productId]);
 
   /* =========================
@@ -122,6 +148,7 @@ export default function ProductDetail() {
   }
 
   const avgSafe = Number(ratingAvg || 0).toFixed(1);
+  const cata = getCata(product);
 
   return (
     <div className="sku-wrap">
@@ -188,144 +215,271 @@ export default function ProductDetail() {
         </p>
       </section>
 
+      {/* =========================
+          ⭐ RUEDA DE CATA REAL
+      ========================= */}
       <section className="sku-section">
-        <h3>Rueda de cata</h3>
-        <div className="sku-wheel">
-          <span>Aromas</span>
-          <span>Dulzor</span>
-          <span>Cuerpo</span>
-          <span>Persistencia</span>
-        </div>
-      </section>
+  <h3>Rueda de cata</h3>
 
-      <section className="sku-section">
-        <h3>Opinión del especialista</h3>
-        <strong>Juan Pérez · Maestro Destilador</strong>
-        <p>
-          Un destilado versátil, ideal para consumo directo o coctelería premium.
-        </p>
-      </section>
+  <div className="sku-wheel-svg">
+    {/* SVG */}
+    <svg width="220" height="220">
+      {[1, 2, 3, 4, 5].map((lvl) => (
+        <circle
+          key={lvl}
+          cx="110"
+          cy="110"
+          r={lvl * 16}
+          fill="none"
+          stroke="#ddd"
+          strokeDasharray="4 4"
+        />
+      ))}
 
+      <polygon
+        points={`
+          ${110},${110 - cata.aromas * 16}
+          ${110 + cata.dulzor * 16},110
+          ${110},${110 + cata.cuerpo * 16}
+          ${110 - cata.persistencia * 16},110
+        `}
+        fill="rgba(242,140,40,0.45)"
+        stroke="#f28c28"
+        strokeWidth="2"
+      />
+    </svg>
+
+    {/* 👉 COLUMNA DERECHA (ESTO NO EXISTÍA) */}
+    <div className="sku-wheel-labels">
+      <span>Aromas · {cata.aromas}/5</span>
+      <span>Dulzor · {cata.dulzor}/5</span>
+      <span>Cuerpo · {cata.cuerpo}/5</span>
+      <span>Persistencia · {cata.persistencia}/5</span>
+    </div>
+  </div>
+</section>
+
+
+      {/* =========================
+          🍸 CÓCTEL RECOMENDADO REAL
+      ========================= */}
       <section className="sku-section">
         <h3>Cóctel recomendado</h3>
-        <div className="sku-cocktail">
-          <img src={coctelImg} alt="Cóctel recomendado" />
-          <div>
-            <h4>Pisco Sour Dalma</h4>
-            <ul>
-              <li>60 ml Pisco</li>
-              <li>30 ml jugo de limón</li>
-              <li>20 ml jarabe de goma</li>
-              <li>1 clara de huevo</li>
-              <li>Hielo</li>
-            </ul>
-          </div>
-        </div>
+
+        {coctelRec ? (
+  <div
+    className="sku-cocktail"
+    onClick={() => navigate(`/cocteles/${coctelRec.id_coctel}`)}
+    style={{ cursor: "pointer" }}
+  >
+    <img
+      src={
+        coctelRec.imagen_url
+          ? `${API_BASE}/${coctelRec.imagen_url}`
+          : coctelImg
+      }
+      alt={coctelRec.nombre}
+    />
+    <div>
+      <h4>{coctelRec.nombre}</h4>
+      <ul>
+        {coctelRec.ingredientes?.map((i, idx) => (
+          <li key={idx}>
+            {i.ingrediente}
+            {i.cantidad ? ` (${i.cantidad})` : ""}
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+) : (
+  <p>No hay cóctel recomendado para este producto.</p>
+)}
       </section>
 
       {/* ================= CSS ================= */}
-      <style>{`
-        .sku-wrap {
-          max-width: 420px;
-          margin: 0 auto;
-          padding-bottom: 90px;
-          background: #fff;
-          text-align: center;
-        }
+{/* ================= CSS ================= */}
+{/* ================= CSS ================= */}
+<style>{`
+  .sku-wrap {
+    max-width: 420px;
+    margin: 0 auto;
+    padding-bottom: 90px;
+    background: #fff;
+    text-align: center;
+  }
 
-        .sku-hero {
-          height: 240px;
-          background-size: cover;
-          background-position: center;
-          border-radius: 0 0 26px 26px;
-          position: relative;
-        }
+  .sku-hero {
+    height: 240px;
+    background-size: cover;
+    background-position: center;
+    border-radius: 0 0 26px 26px;
+    position: relative;
+  }
 
-        .sku-back {
-          position: absolute;
-          top: 14px;
-          left: 14px;
-          width: 44px;
-          height: 44px;
-          border-radius: 50%;
-          border: none;
-          background: #f6b37f;
-          font-size: 20px;
-        }
+  .sku-back {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: #f6b37f;
+    font-size: 20px;
+  }
 
-        .sku-bottle-wrap {
-          width: 170px;
-          margin: -100px auto 0;
-          position: relative;
-          z-index: 10;
-        }
+  .sku-bottle-wrap {
+    width: 170px;
+    margin: -100px auto 0;
+    position: relative;
+    z-index: 10;
+  }
 
-        .sku-bottle {
-          width: 100%;
-          filter: drop-shadow(0 18px 28px rgba(0,0,0,.35));
-        }
+  .sku-bottle {
+    width: 100%;
+    filter: drop-shadow(0 18px 28px rgba(0,0,0,.35));
+  }
 
-        .sku-rating span {
-          font-size: 22px;
-          cursor: pointer;
-          color: #ccc;
-        }
+  .sku-rating span {
+    font-size: 22px;
+    cursor: pointer;
+    color: #ccc;
+  }
 
-        .sku-rating .on {
-          color: #f28c28;
-        }
+  .sku-rating .on {
+    color: #f28c28;
+  }
 
-        .sku-score {
-          margin-left: 6px;
-          font-weight: 700;
-        }
+  .sku-score {
+    margin-left: 6px;
+    font-weight: 700;
+  }
 
-        .sku-price {
-          font-size: 26px;
-          font-weight: 900;
-          margin-top: 8px;
-        }
+  .sku-price {
+    font-size: 26px;
+    font-weight: 900;
+    margin-top: 8px;
+  }
 
-        .sku-actions {
-          display: flex;
-          justify-content: space-around;
-          margin: 16px 0;
-        }
+  .sku-actions {
+    display: flex;
+    justify-content: space-around;
+    margin: 16px 0;
+  }
 
-        .sku-actions button {
-          border: none;
-          background: #fde9d8;
-          padding: 8px 12px;
-          border-radius: 999px;
-          font-size: 12px;
-        }
+  .sku-actions button {
+    border: none;
+    background: #fde9d8;
+    padding: 8px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+  }
 
-        .sku-section {
-          padding: 20px 14px;
-          border-top: 1px solid #eee;
-          text-align: left;
-        }
+  .sku-section {
+    padding: 20px 14px;
+    border-top: 1px solid #eee;
+    text-align: left;
+  }
 
-        .sku-wheel {
-          display: grid;
-          grid-template-columns: repeat(2,1fr);
-          gap: 10px;
-          background: #eee;
-          padding: 20px;
-          border-radius: 16px;
-        }
+  /* =========================
+   ⭐ RUEDA DE CATA (FIX REAL)
+========================= */
+.sku-wheel-svg {
+  display: grid;
+  grid-template-columns: 220px 1fr; /* 👈 fuerza columna derecha */
+  gap: 16px;
+  align-items: center;
+  margin-top: 14px;
+}
 
-        .sku-cocktail {
-          display: grid;
-          grid-template-columns: 120px 1fr;
-          gap: 12px;
-        }
+/* SVG centrado */
+.sku-wheel-svg svg {
+  display: block;
+  margin: 0 auto;
+}
 
-        .sku-cocktail img {
-          width: 100%;
-          border-radius: 12px;
-        }
-      `}</style>
+/* =========================
+   👉 PUNTOS / ATRIBUTOS
+========================= */
+.sku-wheel-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.sku-wheel-labels span {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  background: #fff7ef;
+  border: 1px solid #f6b37f;
+
+  padding: 8px 12px;
+  border-radius: 12px;
+
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Punto visual SIEMPRE visible */
+.sku-wheel-labels span::after {
+  content: "● ● ● ● ●";
+  letter-spacing: 2px;
+  font-size: 10px;
+  color: #f28c28;
+  opacity: 0.25;
+}
+
+/* Resalta según valor (opcional visual) */
+.sku-wheel-labels span:nth-child(1)::after {
+  opacity: calc(var(--aromas, 1) / 5);
+}
+
+
+  /* =========================
+     🍸 CÓCTEL RECOMENDADO
+  ========================= */
+  .sku-cocktail {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 14px;
+    align-items: center;
+    background: #fff7ef;
+    padding: 14px;
+    border-radius: 18px;
+    box-shadow: 0 10px 22px rgba(0,0,0,.08);
+  }
+
+  .sku-cocktail img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 14px;
+  }
+
+  .sku-cocktail h4 {
+    margin: 0 0 6px;
+    color: #f28c28;
+    font-size: 16px;
+    font-weight: 900;
+  }
+
+  .sku-cocktail ul {
+    margin: 0;
+    padding-left: 16px;
+    font-size: 13px;
+  }
+
+  .sku-cocktail li {
+    margin-bottom: 4px;
+  }
+`}</style>
+
+
     </div>
   );
 }

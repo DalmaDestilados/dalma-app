@@ -7,12 +7,14 @@ import path from 'path';
 import pool from '../config/db.js';
 import Coctel from '../models/coctel.model.js'; // 🔥 AGREGADO
 
+// 🔥 AGREGADO (controller)
 import {
   crearCoctel,
   obtenerCoctelesPublicos,
   obtenerCoctelPorId,
   actualizarCoctel,
-  eliminarCoctel
+  eliminarCoctel,
+  obtenerCoctelRecomendadoPorProducto // 🔥 NUEVO
 } from '../controllers/coctel.controller.js';
 
 const router = express.Router();
@@ -26,6 +28,7 @@ router.get('/public/:id', obtenerCoctelPorId);
 
 /* =====================================================
    🔥 CÓCTEL RECOMENDADO POR PRODUCTO (PÚBLICO)
+   (VERSIÓN DIRECTA – SE MANTIENE)
 ===================================================== */
 router.get('/public/recomendado/producto/:id', async (req, res) => {
   try {
@@ -46,6 +49,15 @@ router.get('/public/recomendado/producto/:id', async (req, res) => {
     });
   }
 });
+
+/* =====================================================
+   🔥 CÓCTEL RECOMENDADO POR PRODUCTO (PÚBLICO)
+   (VERSIÓN LIMPIA USANDO CONTROLLER)
+===================================================== */
+router.get(
+  '/public/recomendado/producto-controller/:id_producto',
+  obtenerCoctelRecomendadoPorProducto
+);
 
 /* =====================================================
    🌍 CÓCTELES POR DESTILERÍA (PÚBLICO)

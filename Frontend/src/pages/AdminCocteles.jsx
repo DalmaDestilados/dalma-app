@@ -72,6 +72,7 @@ export default function AdminCocteles() {
     setIngredientes([]);
     setEditingId(null);
     setImageFile(null);
+    setError("");
   }
 
   function handleEdit(c) {
@@ -103,12 +104,42 @@ export default function AdminCocteles() {
   }
 
   /* =========================
+     ✅ VALIDACIONES SEGURAS
+  ========================= */
+  function validarFormulario() {
+    if (!form.nombre.trim()) return "El nombre del cóctel es obligatorio";
+    if (!form.destilado_principal.trim())
+      return "El destilado principal es obligatorio";
+
+    for (const i of ingredientes) {
+      if (!i.ingrediente.trim())
+        return "Todos los ingredientes deben tener nombre";
+    }
+
+    if (imageFile) {
+      if (!imageFile.type.startsWith("image/"))
+        return "El archivo debe ser una imagen";
+      if (imageFile.size > 3 * 1024 * 1024)
+        return "La imagen no puede superar los 3MB";
+    }
+
+    return null;
+  }
+
+  /* =========================
      GUARDAR CÓCTEL
   ========================= */
   async function handleSubmit(e) {
     e.preventDefault();
-    setLoading(true);
     setError("");
+
+    const errorValidacion = validarFormulario();
+    if (errorValidacion) {
+      setError(errorValidacion);
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const payload = {
@@ -174,9 +205,24 @@ export default function AdminCocteles() {
       {error && <p className="error">{error}</p>}
 
       <form onSubmit={handleSubmit} className="form">
-        <input name="nombre" placeholder="Nombre" value={form.nombre} onChange={handleChange} required />
-        <textarea name="descripcion" placeholder="Descripción" value={form.descripcion} onChange={handleChange} />
-        <input name="destilado_principal" placeholder="Destilado principal" value={form.destilado_principal} onChange={handleChange} />
+        <input
+          name="nombre"
+          placeholder="Nombre"
+          value={form.nombre}
+          onChange={handleChange}
+        />
+        <textarea
+          name="descripcion"
+          placeholder="Descripción"
+          value={form.descripcion}
+          onChange={handleChange}
+        />
+        <input
+          name="destilado_principal"
+          placeholder="Destilado principal"
+          value={form.destilado_principal}
+          onChange={handleChange}
+        />
 
         <label>Ingredientes</label>
         {ingredientes.map((i, idx) => (
@@ -184,12 +230,16 @@ export default function AdminCocteles() {
             <input
               placeholder="Ingrediente"
               value={i.ingrediente}
-              onChange={(e) => handleIngredienteChange(idx, "ingrediente", e.target.value)}
+              onChange={(e) =>
+                handleIngredienteChange(idx, "ingrediente", e.target.value)
+              }
             />
             <input
               placeholder="Cantidad"
               value={i.cantidad}
-              onChange={(e) => handleIngredienteChange(idx, "cantidad", e.target.value)}
+              onChange={(e) =>
+                handleIngredienteChange(idx, "cantidad", e.target.value)
+              }
             />
           </div>
         ))}
@@ -199,10 +249,18 @@ export default function AdminCocteles() {
         </button>
 
         <label>Imagen del cóctel</label>
-        <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files[0])} />
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => setImageFile(e.target.files[0])}
+        />
 
         <button disabled={loading}>
-          {loading ? "Guardando..." : editingId ? "Actualizar cóctel" : "Crear cóctel"}
+          {loading
+            ? "Guardando..."
+            : editingId
+            ? "Actualizar cóctel"
+            : "Crear cóctel"}
         </button>
       </form>
 
@@ -223,7 +281,10 @@ export default function AdminCocteles() {
 
             <div className="actions">
               <button onClick={() => handleEdit(c)}>Editar</button>
-              <button className="danger" onClick={() => handleDelete(c.id_coctel)}>
+              <button
+                className="danger"
+                onClick={() => handleDelete(c.id_coctel)}
+              >
                 Eliminar
               </button>
             </div>

@@ -165,7 +165,6 @@ export const subirImagenProducto = async (req, res) => {
       [id]
     );
 
-    // borrar imagen anterior
     if (rows.length && rows[0].imagen_url) {
       const oldPath = path.join(process.cwd(), rows[0].imagen_url);
       if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
@@ -181,5 +180,41 @@ export const subirImagenProducto = async (req, res) => {
     res.json({ message: "Imagen actualizada", imagen_url: imageUrl });
   } catch (error) {
     res.status(500).json({ message: "Error imagen producto", error });
+  }
+};
+
+// =====================
+// ⭐ NUEVO: RUEDA DE CATA (ADMIN)
+// =====================
+
+export const actualizarCataProducto = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      cata_aromas,
+      cata_dulzor,
+      cata_cuerpo,
+      cata_persistencia
+    } = req.body;
+
+    await pool.query(
+      `UPDATE productos
+       SET cata_aromas = ?,
+           cata_dulzor = ?,
+           cata_cuerpo = ?,
+           cata_persistencia = ?
+       WHERE id_producto = ?`,
+      [
+        cata_aromas,
+        cata_dulzor,
+        cata_cuerpo,
+        cata_persistencia,
+        id
+      ]
+    );
+
+    res.json({ message: "Rueda de cata actualizada correctamente" });
+  } catch (error) {
+    res.status(500).json({ error: "Error al actualizar rueda de cata" });
   }
 };

@@ -51,13 +51,51 @@ export default function AdminDestilerias() {
     setForm((prev) => ({ ...prev, [name]: value }));
   }
 
+  /* =========================
+     ✅ VALIDACIONES SEGURAS
+  ========================= */
+  function validarFormulario() {
+    if (!form.nombre_comercial.trim())
+      return "El nombre comercial es obligatorio";
+
+    if (!form.descripcion.trim())
+      return "La descripción es obligatoria";
+
+    if (form.email_contacto && !/^\S+@\S+\.\S+$/.test(form.email_contacto))
+      return "Email de contacto no válido";
+
+    if (form.telefono && !/^[0-9+\s()-]+$/.test(form.telefono))
+      return "Teléfono no válido";
+
+    if (
+      form.sitio_web &&
+      !/^https?:\/\/.+\..+/.test(form.sitio_web)
+    )
+      return "El sitio web debe comenzar con http:// o https://";
+
+    if (!editingId && galeriaFiles.length < 3)
+      return "Debes subir al menos 3 imágenes para la galería";
+
+    const allFiles = [logoFile, personaFile, ...galeriaFiles].filter(Boolean);
+
+    for (const file of allFiles) {
+      if (!file.type.startsWith("image/"))
+        return "Todos los archivos deben ser imágenes";
+      if (file.size > 3 * 1024 * 1024)
+        return "Las imágenes no pueden superar los 3MB";
+    }
+
+    return null;
+  }
+
   async function handleSave(e) {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    if (!editingId && galeriaFiles.length < 3) {
-      setError("Debes subir al menos 3 imágenes para la galería");
+    const errorValidacion = validarFormulario();
+    if (errorValidacion) {
+      setError(errorValidacion);
       setLoading(false);
       return;
     }
@@ -158,6 +196,7 @@ export default function AdminDestilerias() {
     setLogoFile(null);
     setPersonaFile(null);
     setGaleriaFiles([]);
+    setError("");
   }
 
   return (
@@ -166,7 +205,7 @@ export default function AdminDestilerias() {
       {error && <p className="error">{error}</p>}
 
       <form onSubmit={handleSave} className="admin-form">
-        <input placeholder="Nombre comercial" name="nombre_comercial" value={form.nombre_comercial} onChange={handleChange} required />
+        <input placeholder="Nombre comercial" name="nombre_comercial" value={form.nombre_comercial} onChange={handleChange} />
         <textarea placeholder="Descripción" name="descripcion" value={form.descripcion} onChange={handleChange} />
 
         <input placeholder="Email contacto" name="email_contacto" value={form.email_contacto} onChange={handleChange} />
@@ -207,34 +246,17 @@ export default function AdminDestilerias() {
               <button onClick={() => handleEdit(d)}>Editar</button>
               <button className="danger" onClick={() => handleDelete(d.id_destileria)}>Eliminar</button>
 
-              <button
-                type="button"
-                className="dalma-primary-btn dalma-products-btn"
-                onClick={() => navigate(`/admin/destilerias/${d.id_destileria}/productos`)}
-              >
+              <button onClick={() => navigate(`/admin/destilerias/${d.id_destileria}/productos`)}>
                 Gestionar productos
               </button>
 
-              {/*GESTIONAR CÓCTELES */}
-              <button
-                type="button"
-                className="dalma-primary-btn"
-                onClick={() => navigate(`/admin/destilerias/${d.id_destileria}/cocteles`)}
-              >
+              <button onClick={() => navigate(`/admin/destilerias/${d.id_destileria}/cocteles`)}>
                 Gestionar cócteles
               </button>
 
-              <button
-                type="button"
-                className="dalma-primary-btn"
-                onClick={() =>
-                  navigate(`/admin/eventos?id_destileria=${d.id_destileria}`)
-                }
-              >
+              <button onClick={() => navigate(`/admin/eventos?id_destileria=${d.id_destileria}`)}>
                 Gestionar eventos
               </button>
-
-
             </div>
           </li>
         ))}
@@ -333,6 +355,97 @@ export default function AdminDestilerias() {
         .dalma-products-btn {
           margin-bottom: 10px;
         }
+          /* ===============================
+   🎛 BOTONERA CRUD DESTILERÍAS
+================================ */
+
+.admin-list li {
+  background: #fff;
+  border-radius: 18px;
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.12);
+}
+
+/* Nombre + ubicación */
+.admin-list li strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 900;
+  margin-bottom: 2px;
+}
+
+.admin-list li span {
+  display: block;
+  font-size: 13px;
+  opacity: 0.65;
+  margin-bottom: 12px;
+}
+
+/* Contenedor de botones */
+.admin-list li > div {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+/* Botón base */
+.admin-list button {
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: none;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: rgba(0,0,0,0.06);
+  color: #111;
+}
+
+/* Hover general */
+.admin-list button:hover {
+  transform: translateY(-1px);
+  background: rgba(0,0,0,0.12);
+}
+
+/* Editar */
+.admin-list button:first-child {
+  background: rgba(242, 140, 40, 0.18);
+  color: #111;
+}
+
+.admin-list button:first-child:hover {
+  background: rgba(242, 140, 40, 0.35);
+}
+
+/* Eliminar */
+.admin-list .danger {
+  background: #e74c3c;
+  color: #fff;
+}
+
+.admin-list .danger:hover {
+  background: #c0392b;
+}
+
+/* Botones de gestión */
+.dalma-primary-btn {
+  background: linear-gradient(135deg, #f28c28, #ff9f43);
+  color: #111;
+}
+
+.dalma-primary-btn:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
+/* Ajuste mobile fino */
+@media (max-width: 420px) {
+  .admin-list li > div {
+    grid-template-columns: 1fr;
+  }
+}
+
       `}</style>
     </div>
   );

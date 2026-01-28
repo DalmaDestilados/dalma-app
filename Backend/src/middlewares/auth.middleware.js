@@ -12,10 +12,12 @@ const authMiddleware = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-  
-    req.user = {
-      id_usuario: decoded.id, 
-      rol: decoded.rol,
+    // 🔧 NORMALIZAMOS el usuario para TODO el backend
+    req.usuario = {
+      id_usuario: decoded.id,
+      // compatibilidad: rol antiguo o id_rol nuevo
+      rol: decoded.rol ?? decoded.id_rol,
+      id_rol: decoded.id_rol ?? decoded.rol
     };
 
     next();

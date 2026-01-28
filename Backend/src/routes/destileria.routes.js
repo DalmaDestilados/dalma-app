@@ -97,6 +97,39 @@ router.get("/:id/perfil", async (req, res) => {
   }
 });
 
+/* =====================================================
+   🔥 NUEVO: MEET THE MASTERS (PÚBLICO)
+   Devuelve maestros reales con su destilería
+===================================================== */
+router.get("/public/masters", async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT
+        d.id_destileria,
+        d.nombre_comercial,
+        d.logo_url,
+        d.ciudad,
+        d.pais,
+        d.persona_nombre AS nombre,
+        d.persona_descripcion AS descripcion,
+        d.persona_url AS foto_url
+      FROM destilerias d
+      WHERE d.activo = 1
+        AND d.persona_nombre IS NOT NULL
+        AND d.persona_url IS NOT NULL
+      ORDER BY d.created_at DESC
+    `);
+
+    res.json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Error al obtener maestros",
+      error: error.message
+    });
+  }
+});
+
 /* =========================
    🔐 RUTAS ADMIN
 ========================= */

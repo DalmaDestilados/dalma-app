@@ -99,52 +99,61 @@ const Coctel = {
   },
 
   // =====================
-  // 🔥 NUEVO: CÓCTEL RECOMENDADO POR PRODUCTO
+  // 🔥 NUEVO (NO REEMPLAZA NADA)
+  // CÓCTEL RECOMENDADO SEGÚN PRODUCTO REAL
   // =====================
   async obtenerRecomendadoPorProducto(id_producto) {
-    const [[producto]] = await pool.query(
-      `
-      SELECT categoria, id_destileria
-      FROM productos
-      WHERE id_producto = ?
-        AND activo = 1
-      `,
-      [id_producto]
-    );
 
-    if (!producto) return null;
+  // 1️⃣ Obtener producto real
+  const [[producto]] = await pool.query(
+    `
+    SELECT id_producto, nombre, id_destileria
+    FROM productos
+    WHERE id_producto = ?
+      AND activo = 1
+    `,
+    [id_producto]
+  );
 
-    const [[coctel]] = await pool.query(
-      `
-      SELECT
-        c.id_coctel,
-        c.nombre,
-        c.descripcion,
-        c.destilado_principal,
-        c.imagen_url
-      FROM cocteles c
-      WHERE c.activo = 1
-        AND c.destilado_principal = ?
-        AND c.id_destileria = ?
-      ORDER BY c.created_at DESC
-      LIMIT 1
-      `,
-      [producto.categoria, producto.id_destileria]
-    );
+  if (!producto) return null;
 
-    if (!coctel) return null;
+  // 2️⃣ Buscar cóctel cuyo destilado_principal sea ESTE producto
+  const [[coctel]] = await pool.query(
+  `
+  SELECT
+    c.id_coctel,
+    c.nombre,
+    c.descripcion,
+    c.destilado_principal,
+    c.imagen_url,
+    p.id_producto
+  FROM cocteles c
+  JOIN productos p
+    ON p.categoria = c.destilado_principal
+   AND p.id_destileria = c.id_destileria
+  WHERE c.activo = 1
+    AND p.activo = 1
+    AND p.id_producto = ?
+  ORDER BY c.created_at DESC
+  LIMIT 1
+  `,
+  [id_producto]
+);
 
-    const [ingredientes] = await pool.query(
-      `
-      SELECT ingrediente, cantidad
-      FROM coctel_ingredientes
-      WHERE id_coctel = ?
-      `,
-      [coctel.id_coctel]
-    );
+  if (!coctel) return null;
 
-    return { ...coctel, ingredientes };
-  },
+  // 3️⃣ Ingredientes del cóctel
+  const [ingredientes] = await pool.query(
+    `
+    SELECT ingrediente, cantidad
+    FROM coctel_ingredientes
+    WHERE id_coctel = ?
+    `,
+    [coctel.id_coctel]
+  );
+
+  return { ...coctel, ingredientes };
+},
 
   // =====================
   // ADMIN

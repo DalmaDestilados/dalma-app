@@ -76,11 +76,6 @@ export const crearCoctel = async (req, res) => {
 
     const id_coctel = await Coctel.crear(data);
 
-    // ❌ IMPORTANTE:
-    // Los ingredientes se guardan en:
-    // POST /cocteles/:id/ingredientes
-    // (NO aquí)
-
     res.status(201).json({
       message: 'Cóctel creado correctamente',
       id_coctel
@@ -193,5 +188,25 @@ export const eliminarCoctel = async (req, res) => {
     res.json({ message: 'Cóctel eliminado correctamente' });
   } catch {
     res.status(500).json({ error: 'Error al eliminar cóctel' });
+  }
+};
+
+// ===================================================
+// 🔥 NUEVO: CÓCTEL RECOMENDADO SEGÚN PRODUCTO
+// ===================================================
+export const obtenerCoctelRecomendadoPorProducto = async (req, res) => {
+  try {
+    const { id_producto } = req.params;
+
+    const coctel = await Coctel.obtenerRecomendadoPorProducto(id_producto);
+
+    if (!coctel) {
+      return res.json(null);
+    }
+
+    res.json(coctel);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al obtener cóctel recomendado' });
   }
 };

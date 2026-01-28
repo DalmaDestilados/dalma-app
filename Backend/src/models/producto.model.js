@@ -86,7 +86,14 @@ class Producto {
         p.contenido_neto,
         p.grado_alcoholico,
         p.imagen_url,
-        p.id_destileria
+        p.id_destileria,
+
+        -- ⭐ CATA
+        p.cata_aromas,
+        p.cata_dulzor,
+        p.cata_cuerpo,
+        p.cata_persistencia
+
       FROM productos p
       INNER JOIN destilerias d
         ON p.id_destileria = d.id_destileria
@@ -109,7 +116,14 @@ class Producto {
         p.contenido_neto,
         p.grado_alcoholico,
         p.imagen_url,
-        p.id_destileria
+        p.id_destileria,
+
+        -- ⭐ CATA
+        p.cata_aromas,
+        p.cata_dulzor,
+        p.cata_cuerpo,
+        p.cata_persistencia
+
       FROM productos p
       INNER JOIN destilerias d
         ON p.id_destileria = d.id_destileria
@@ -133,7 +147,14 @@ class Producto {
         p.stock,
         p.contenido_neto,
         p.grado_alcoholico,
-        p.imagen_url
+        p.imagen_url,
+
+        -- ⭐ CATA
+        p.cata_aromas,
+        p.cata_dulzor,
+        p.cata_cuerpo,
+        p.cata_persistencia
+
       FROM productos p
       INNER JOIN destilerias d
         ON p.id_destileria = d.id_destileria
