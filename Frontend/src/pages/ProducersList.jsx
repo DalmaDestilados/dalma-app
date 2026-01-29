@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 /* =========================
@@ -18,7 +18,7 @@ function DistillerySVG() {
   );
 }
 
-export default function ProducersList() {
+export default function ProducersList({ searchTerm }) {
   const [destilerias, setDestilerias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -46,6 +46,22 @@ export default function ProducersList() {
     }
   }
 
+  /* =========================
+     🔍 FILTRO POR BUSCADOR HEADER
+  ========================= */
+  const filteredDestilerias = useMemo(() => {
+    const q = searchTerm?.trim().toLowerCase();
+    if (!q) return destilerias;
+
+    return destilerias.filter((d) =>
+      [d.nombre_comercial, d.ciudad, d.pais]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(q)
+    );
+  }, [destilerias, searchTerm]);
+
   if (loading) return <p className="dalma-state">Cargando destilerías...</p>;
   if (error) return <p className="dalma-state error">{error}</p>;
 
@@ -53,35 +69,42 @@ export default function ProducersList() {
     <div className="dalma-producers-page">
       <h2 className="dalma-title">Destilerías</h2>
 
-      <div className="dalma-producers-grid">
-        {destilerias.map((d) => (
-          <div
-            key={d.id_destileria}
-            className="dalma-producer-card"
-            onClick={() => navigate(`/productores/${d.id_destileria}`)}
-          >
-            <div className="dalma-producer-image">
-              {d.logo_url ? (
-                <img
-                  src={`${API_URL_BASE}/${d.logo_url}`}
-                  alt={d.nombre_comercial}
-                  className="dalma-logo-img"
-                />
-              ) : (
-                <DistillerySVG />
-              )}
-            </div>
+      {filteredDestilerias.length === 0 ? (
+        <p className="dalma-state">
+          No se encontraron destilerías para{" "}
+          <strong>{searchTerm}</strong>
+        </p>
+      ) : (
+        <div className="dalma-producers-grid">
+          {filteredDestilerias.map((d) => (
+            <div
+              key={d.id_destileria}
+              className="dalma-producer-card"
+              onClick={() => navigate(`/productores/${d.id_destileria}`)}
+            >
+              <div className="dalma-producer-image">
+                {d.logo_url ? (
+                  <img
+                    src={`${API_URL_BASE}/${d.logo_url}`}
+                    alt={d.nombre_comercial}
+                    className="dalma-logo-img"
+                  />
+                ) : (
+                  <DistillerySVG />
+                )}
+              </div>
 
-            <div className="dalma-producer-body">
-              <h3>{d.nombre_comercial}</h3>
-              <p>
-                {[d.ciudad, d.pais].filter(Boolean).join(", ")}
-              </p>
-              <span className="dalma-cta">Ver destilería →</span>
+              <div className="dalma-producer-body">
+                <h3>{d.nombre_comercial}</h3>
+                <p>
+                  {[d.ciudad, d.pais].filter(Boolean).join(", ")}
+                </p>
+                <span className="dalma-cta">Ver destilería →</span>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* ================= CSS ================= */}
       <style>{`

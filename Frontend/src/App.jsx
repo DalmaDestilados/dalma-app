@@ -6,8 +6,6 @@ import AdminCocteles from "./pages/AdminCocteles.jsx";
 import EventsList from "./pages/EventsList.jsx";
 import ProducerEvents from "./pages/ProducerEvents.jsx";
 
-
-
 import Header from "./components/Header.jsx";
 import BottomNav from "./components/BottomNav.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -32,8 +30,6 @@ import AdminEventos from "./pages/AdminEventos.jsx";
 import VerifyEmail from "./pages/VerifyEmail.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
-
-
 
 export default function App() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -61,19 +57,15 @@ export default function App() {
 
       <main className="main-content">
         <Routes>
-          {/* Landing publica */}
           <Route path="/" element={<Landing />} />
 
-          {/* Auth publicas */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* Flujos por correo */}
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
-          {/* Home protegido */}
           <Route
             path="/home"
             element={
@@ -83,7 +75,6 @@ export default function App() {
             }
           />
 
-          {/* Admin destilerías protegido */}
           <Route
             path="/admin/destilerias"
             element={
@@ -93,7 +84,6 @@ export default function App() {
             }
           />
 
-          {/* Admin productos protegido */}
           <Route
             path="/admin/productos"
             element={
@@ -103,7 +93,6 @@ export default function App() {
             }
           />
 
-          {/* Bottom nav protegidas */}
           <Route
             path="/buscar"
             element={
@@ -121,31 +110,40 @@ export default function App() {
             }
           />
 
-          {/* Productores públicos */}
-          <Route path="/productores" element={<ProducersList />} />
+          {/* PRODUCTORES */}
+          <Route
+            path="/productores"
+            element={<ProducersList searchTerm={searchTerm} />}
+          />
           <Route
             path="/productores/:producerId"
             element={<ProducerDetail />}
           />
 
-          {/* RUTA DE DESTILERÍA */}
+          {/* PRODUCTOS POR DESTILERÍA */}
           <Route
             path="/productores/:producerId/productos"
-            element={<ProductList />}
+            element={<ProductList searchTerm={searchTerm} />}
           />
 
-          {/* Productos directos */}
-          <Route path="/productos" element={<ProductList />} />
+          {/* PRODUCTOS */}
+          <Route
+            path="/productos"
+            element={<ProductList searchTerm={searchTerm} />}
+          />
           <Route
             path="/productos/:productId"
             element={<ProductDetail />}
           />
 
-          {/* ALIAS PARA SKUS (FIX BUSCADOR / CARRUSEL) */}
-          <Route path="/skus" element={<ProductList />} />
+          {/* ALIAS */}
+          <Route
+            path="/skus"
+            element={<ProductList searchTerm={searchTerm} />}
+          />
           <Route path="/skus/:id" element={<ProductDetail />} />
 
-          {/* Cócteles protegidos */}
+          {/* CÓCTELES */}
           <Route
             path="/cocteles"
             element={
@@ -163,7 +161,6 @@ export default function App() {
             }
           />
 
-          {/* Perfil protegido */}
           <Route
             path="/profile"
             element={
@@ -173,13 +170,11 @@ export default function App() {
             }
           />
 
-          {/* Admin productos por destilería */}
           <Route
             path="/admin/destilerias/:idDestileria/productos"
             element={<AdminProductos />}
           />
 
-          {/*  NUEVO: ADMIN CÓCTELES POR DESTILERÍA */}
           <Route
             path="/admin/destilerias/:idDestileria/cocteles"
             element={
@@ -188,7 +183,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          {/* ADMIN EVENTOS */}
+
           <Route
             path="/admin/eventos"
             element={
@@ -197,9 +192,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          
 
-          {/* EVENTOS & TURISMO (GLOBAL) */}
           <Route
             path="/eventos"
             element={
@@ -209,7 +202,6 @@ export default function App() {
             }
           />
 
-          {/* EVENTOS & TURISMO POR DESTILERÍA */}
           <Route
             path="/productores/:producerId/eventos"
             element={
@@ -219,8 +211,6 @@ export default function App() {
             }
           />
 
-
-          {/* fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

@@ -88,59 +88,53 @@ export default function ProducerDetail() {
   }, [producerId]);
 
   /* =========================
-     CARGAR CÓCTELES (PÚBLICO)
+     CARGAR CÓCTELES
   ========================= */
-  /* =========================
-   CARGAR CÓCTELES (PÚBLICO + FALLBACK ADMIN)
-========================= */
-useEffect(() => {
-  async function fetchCocteles() {
-    try {
-      // 1️⃣ intento público
-      let res = await fetch(
-        `${API_BASE}/api/cocteles/public/destileria/${producerId}`
-      );
+  useEffect(() => {
+    async function fetchCocteles() {
+      try {
+        let res = await fetch(
+          `${API_BASE}/api/cocteles/public/destileria/${producerId}`
+        );
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.length > 0) {
-          setCocteles(data);
-          setLoadingCocteles(false);
-          return;
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.length > 0) {
+            setCocteles(data);
+            setLoadingCocteles(false);
+            return;
+          }
         }
+
+        res = await fetch(
+          `${API_BASE}/api/cocteles/destileria/${producerId}`,
+          { credentials: "include" }
+        );
+
+        if (!res.ok) throw new Error();
+
+        const data = await res.json();
+        setCocteles(data || []);
+      } catch (err) {
+        console.error("Error cargando cócteles", err);
+        setCocteles([]);
+      } finally {
+        setLoadingCocteles(false);
       }
-
-      // 2️⃣ fallback admin (cuando activo ≠ 1)
-      res = await fetch(
-        `${API_BASE}/api/cocteles/destileria/${producerId}`,
-        { credentials: "include" }
-      );
-
-      if (!res.ok) throw new Error();
-
-      const data = await res.json();
-      setCocteles(data || []);
-    } catch (err) {
-      console.error("Error cargando cócteles", err);
-      setCocteles([]);
-    } finally {
-      setLoadingCocteles(false);
     }
-  }
 
-  fetchCocteles();
-}, [producerId]);
-
-
-  if (!producer) return <div className="pd-loading">Cargando…</div>;
+    fetchCocteles();
+  }, [producerId]);
 
   /* =========================
-     CARRUSEL
+     CARRUSEL DATA
   ========================= */
-  const images = producer.galeria.length
-    ? producer.galeria.map((g) => getImageUrl(g.imagen_url))
-    : producer.logo
-    ? [getImageUrl(producer.logo)]
+  const images = producer
+    ? producer.galeria.length
+      ? producer.galeria.map((g) => getImageUrl(g.imagen_url))
+      : producer.logo
+      ? [getImageUrl(producer.logo)]
+      : []
     : [];
 
   const carouselImages = (() => {
@@ -150,17 +144,31 @@ useEffect(() => {
     return [];
   })();
 
+  /* =========================
+     ▶️ AUTOPLAY CARRUSEL (FIX)
+  ========================= */
+  useEffect(() => {
+    if (carouselImages.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setSlide((s) => (s + 1) % carouselImages.length);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [carouselImages.length]);
+
   const nextCarousel = () =>
-    setSlide((s) =>
-      carouselImages.length ? (s + 1) % carouselImages.length : 0
-    );
+    setSlide((s) => (s + 1) % carouselImages.length);
 
   const prevCarousel = () =>
     setSlide((s) =>
-      carouselImages.length
-        ? (s - 1 + carouselImages.length) % carouselImages.length
-        : 0
+      (s - 1 + carouselImages.length) % carouselImages.length
     );
+
+  /* =========================
+     LOADING
+  ========================= */
+  if (!producer) return <div className="pd-loading">Cargando…</div>;
 
   return (
     <div className="pd-wrap">
@@ -248,19 +256,18 @@ useEffect(() => {
         </div>
       </section>
 
-{/* EVENTO */}
-<section className="pd-section">
-  <Link
-    to={`/productores/${producerId}/eventos`}
-    style={{ textDecoration: "none", color: "inherit" }}
-  >
-    <img className="pd-event" src={eventoImg} alt="Evento" />
-    <div className="pd-event-label">
-      Comparte en nuestros eventos y degustaciones
-    </div>
-  </Link>
-</section>
-
+      {/* EVENTO */}
+      <section className="pd-section">
+        <Link
+          to={`/productores/${producerId}/eventos`}
+          style={{ textDecoration: "none", color: "inherit" }}
+        >
+          <img className="pd-event" src={eventoImg} alt="Evento" />
+          <div className="pd-event-label">
+            Comparte en nuestros eventos y degustaciones
+          </div>
+        </Link>
+      </section>
 
       {/* CÓCTELES */}
       <section className="pd-section">
@@ -296,29 +303,28 @@ useEffect(() => {
       </section>
 
       {/* CONTACTO */}
-<section className="pd-section">
-  <h2>Conéctate con nosotros</h2>
+      <section className="pd-section">
+        <h2>Conéctate con nosotros</h2>
 
-  <div className="pd-contact-icons">
-    <span>📞</span>
-    <span>🌐</span>
-    <span>📸</span>
-    <span>📍</span>
-  </div>
+        <div className="pd-contact-icons">
+          <span>📞</span>
+          <span>🌐</span>
+          <span>📸</span>
+          <span>📍</span>
+        </div>
 
-  <p style={{ textAlign: "center", fontSize: 13, marginBottom: 12 }}>
-    …o si prefieres, envíanos un mensaje directo acá
-  </p>
+        <p style={{ textAlign: "center", fontSize: 13, marginBottom: 12 }}>
+          …o si prefieres, envíanos un mensaje directo acá
+        </p>
 
-  <form className="pd-contact-form">
-    <input type="text" placeholder="Nombre" />
-    <input type="tel" placeholder="Teléfono" />
-    <input type="email" placeholder="Correo electrónico" />
-    <textarea rows="3" placeholder="Mensaje"></textarea>
-    <button type="button">Enviar</button>
-  </form>
-</section>
-
+        <form className="pd-contact-form">
+          <input type="text" placeholder="Nombre" />
+          <input type="tel" placeholder="Teléfono" />
+          <input type="email" placeholder="Correo electrónico" />
+          <textarea rows="3" placeholder="Mensaje"></textarea>
+          <button type="button">Enviar</button>
+        </form>
+      </section>
 
       <Link to="/productores" className="pd-back-link">
         ← Volver a destilerías

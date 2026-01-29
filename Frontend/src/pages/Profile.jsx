@@ -19,17 +19,13 @@ export default function Profile() {
 
   function handleSave(e) {
     e.preventDefault();
-
-    // ⛔ aquí solo simulamos guardado
     alert("Perfil actualizado (simulado)\n\n✔ Nombre\n✔ Foto");
-
     setEditing(false);
   }
 
   return (
     <div className="profile-page">
       <div className="profile-card">
-        {/* HEADER */}
         <div className="profile-header">
           <div className="profile-avatar">
             {preview ? (
@@ -43,7 +39,6 @@ export default function Profile() {
           <p className="profile-subtitle">Cuenta Dalma</p>
         </div>
 
-        {/* CONTENIDO */}
         {user ? (
           editing ? (
             <form onSubmit={handleSave} className="profile-form">
@@ -63,7 +58,11 @@ export default function Profile() {
               </label>
 
               <div className="profile-actions">
-                <button type="button" className="btn-outline" onClick={() => setEditing(false)}>
+                <button
+                  type="button"
+                  className="btn-outline"
+                  onClick={() => setEditing(false)}
+                >
                   Cancelar
                 </button>
                 <button type="submit" className="btn-primary">
@@ -95,7 +94,10 @@ export default function Profile() {
               </div>
 
               <div className="profile-actions">
-                <button className="btn-outline" onClick={() => setEditing(true)}>
+                <button
+                  className="btn-outline"
+                  onClick={() => setEditing(true)}
+                >
                   Editar perfil
                 </button>
                 <button className="btn-danger" onClick={logout}>
@@ -109,8 +111,27 @@ export default function Profile() {
         )}
       </div>
 
-      {/* ===== ESTILOS ===== */}
       <style>{`
+        .profile-page {
+          min-height: calc(100vh - 80px);
+          display: flex;
+          align-items: flex-start; /* 🔥 CAMBIO CLAVE */
+          justify-content: center;
+          background: #f7f7f7;
+          padding: 40px 20px 20px; /* 🔥 ESPACIO SUPERIOR */
+        }
+
+        .profile-card {
+          width: 100%;
+          max-width: 420px;
+          background: #fff;
+          border-radius: 20px;
+          padding: 24px;
+          box-shadow: 0 20px 40px rgba(0,0,0,.12);
+        }
+
+        /* todo lo demás IGUAL */
+  
         .profile-page {
           min-height: calc(100vh - 80px);
           display: flex;

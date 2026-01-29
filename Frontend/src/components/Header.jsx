@@ -15,6 +15,25 @@ export default function Header({
 
   const isHome = location.pathname === "/home";
 
+  // ✅ RUTAS DONDE EL BUSCADOR DEBE ESTAR ACTIVO
+  const isProducerList = location.pathname === "/productores";
+  const isProductList =
+    location.pathname === "/productos" ||
+    /^\/productores\/\d+\/productos$/.test(location.pathname) ||
+    location.pathname === "/skus";
+
+  // 🔥 OCULTAR SOLO EL BUSCADOR (NO EL BURGER)
+  const hideHeaderSearch =
+    !(isProducerList || isProductList) &&
+    (
+      location.pathname === "/cocteles" ||
+      /^\/cocteles\/\d+/.test(location.pathname) ||
+      /^\/productores\/\d+/.test(location.pathname) ||
+      /^\/productos\/\d+/.test(location.pathname) ||
+      location.pathname === "/profile" ||
+      location.pathname.startsWith("/admin")
+    );
+
   const categories = useMemo(
     () => ["Todos", "Pisco", "Gin", "Whisky", "Vodka", "Ron", "Licores", "Otros"],
     []
@@ -31,7 +50,6 @@ export default function Header({
     if (!isHome) navigate("/home");
   }
 
-  
   const esAdmin = !booting && user?.rol === 3;
 
   return (
@@ -73,15 +91,17 @@ export default function Header({
           <span />
         </button>
 
-        <div className="dalma-search">
-          <span className="dalma-search-ico">🔍</span>
-          <input
-            type="text"
-            placeholder="Buscar"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+        {!hideHeaderSearch && (
+          <div className="dalma-search">
+            <span className="dalma-search-ico">🔍</span>
+            <input
+              type="text"
+              placeholder="Buscar"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        )}
       </div>
 
       {open && <div className="dalma-overlay" onClick={() => setOpen(false)} />}
@@ -92,7 +112,6 @@ export default function Header({
         <button onClick={() => go("/productores")}>🏭 Destilerías</button>
         <button onClick={() => go("/productos")}>🧴 Productos</button>
 
-        {/* ===== BOTONES ADMIN ===== */}
         {esAdmin && (
           <>
             <button
@@ -120,16 +139,13 @@ export default function Header({
 
         <button onClick={() => go("/profile")}>👤 Perfil</button>
 
-        {/* ================= CATEGORÍAS ================= */}
         <div className="dalma-drawer-categories">
           <strong>Categorías</strong>
           {categories.map((c) => (
             <button
               key={c}
               onClick={() => pickCategory(c)}
-              className={`dalma-cat-btn ${
-                category === c ? "active" : ""
-              }`}
+              className={`dalma-cat-btn ${category === c ? "active" : ""}`}
             >
               {c}
             </button>

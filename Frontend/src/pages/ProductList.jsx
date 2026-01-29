@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
-export default function ProductList() {
+export default function ProductList({ searchTerm }) {
   const { producerId } = useParams();
   const navigate = useNavigate();
 
@@ -42,6 +42,26 @@ export default function ProductList() {
     }
   }
 
+  /* =========================
+     🔍 FILTRO POR BUSCADOR HEADER
+  ========================= */
+  const filteredProductos = useMemo(() => {
+    const q = searchTerm?.trim().toLowerCase();
+    if (!q) return productos;
+
+    return productos.filter((p) =>
+      [
+        p.nombre,
+        p.categoria,
+        p.descripcion,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(q)
+    );
+  }, [productos, searchTerm]);
+
   if (loading) return <p className="pl-loading">Cargando productos…</p>;
   if (error) return <p className="pl-error">{error}</p>;
 
@@ -49,12 +69,14 @@ export default function ProductList() {
     <div className="pl-wrap">
       <h2 className="pl-title">Nuestros productos</h2>
 
-      {productos.length === 0 && (
-        <p className="pl-empty">No hay productos disponibles.</p>
+      {filteredProductos.length === 0 && (
+        <p className="pl-empty">
+          No se encontraron productos para <strong>{searchTerm}</strong>
+        </p>
       )}
 
       <div className="pl-grid">
-        {productos.map((p) => (
+        {filteredProductos.map((p) => (
           <div
             key={p.id_producto}
             className="pl-card"
