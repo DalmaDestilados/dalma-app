@@ -307,10 +307,11 @@ export default function ProductDetail() {
     padding-bottom: 90px;
     background: #fff;
     text-align: center;
+    position: relative;
   }
 
   .sku-hero {
-    height: 240px;
+    height: 270px;
     background-size: cover;
     background-position: center;
     border-radius: 0 0 26px 26px;
@@ -327,18 +328,53 @@ export default function ProductDetail() {
     border: none;
     background: #f6b37f;
     font-size: 20px;
+    z-index: 50;
   }
 
+  /* ===============================
+     BOTELLA – MOCKUP REAL
+     GRANDE / IZQUIERDA / OCUPA ESPACIO
+  =============================== */
+
   .sku-bottle-wrap {
-    width: 170px;
-    margin: -100px auto 0;
-    position: relative;
-    z-index: 10;
+    position: absolute;
+    top: 180px;               /* baja la botella */
+    left: 0;                  /* 🔥 se va a la izquierda */
+    width: 55%;               /* 🔥 ocupa espacio blanco */
+    display: flex;
+    justify-content: center;
+    z-index: 30;
+    pointer-events: none;
   }
 
   .sku-bottle {
     width: 100%;
-    filter: drop-shadow(0 18px 28px rgba(0,0,0,.35));
+    max-width: 260px;         /* 🔥 botella grande */
+    height: auto;
+
+    background: transparent;
+    mix-blend-mode: multiply;
+
+    transform: translateX(-10%) translateY(10px);
+    filter: drop-shadow(0 40px 55px rgba(0,0,0,0.45));
+  }
+
+  /* ===============================
+     INFO PRODUCTO A LA DERECHA
+  =============================== */
+
+  .sku-rating,
+  .sku-price,
+  .sku-stock,
+  .sku-title,
+  .sku-meta,
+  .sku-actions {
+    margin-left: 45%;         /* 🔥 deja espacio botella */
+    text-align: left;
+  }
+
+  .sku-rating {
+    margin-top: 12px;
   }
 
   .sku-rating span {
@@ -357,92 +393,89 @@ export default function ProductDetail() {
   }
 
   .sku-price {
-    font-size: 26px;
+    font-size: 28px;
     font-weight: 900;
     margin-top: 8px;
   }
 
+  .sku-stock {
+    font-size: 13px;
+    opacity: 0.7;
+  }
+
+  .sku-title {
+    font-size: 20px;
+    font-weight: 900;
+    margin-top: 10px;
+  }
+
+  .sku-meta {
+    font-size: 14px;
+    opacity: 0.8;
+  }
+
   .sku-actions {
     display: flex;
-    justify-content: space-around;
+    gap: 10px;
     margin: 16px 0;
   }
 
   .sku-actions button {
     border: none;
     background: #fde9d8;
-    padding: 8px 12px;
+    padding: 10px 14px;
     border-radius: 999px;
     font-size: 12px;
+    white-space: nowrap;
   }
+
+  /* =========================
+     SECCIONES NORMALES
+  ========================= */
 
   .sku-section {
     padding: 20px 14px;
     border-top: 1px solid #eee;
     text-align: left;
+    margin-top: 20px;
   }
 
   /* =========================
-   ⭐ RUEDA DE CATA (FIX REAL)
-========================= */
-.sku-wheel-svg {
-  display: grid;
-  grid-template-columns: 220px 1fr; /* 👈 fuerza columna derecha */
-  gap: 16px;
-  align-items: center;
-  margin-top: 14px;
-}
+     RUEDA DE CATA
+  ========================= */
 
-/* SVG centrado */
-.sku-wheel-svg svg {
-  display: block;
-  margin: 0 auto;
-}
+  .sku-wheel-svg {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 16px;
+    align-items: center;
+    margin-top: 14px;
+  }
 
-/* =========================
-   👉 PUNTOS / ATRIBUTOS
-========================= */
-.sku-wheel-labels {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: 100%;
-}
+  .sku-wheel-svg svg {
+    display: block;
+    margin: 0 auto;
+  }
 
-.sku-wheel-labels span {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  .sku-wheel-labels {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
 
-  background: #fff7ef;
-  border: 1px solid #f6b37f;
-
-  padding: 8px 12px;
-  border-radius: 12px;
-
-  font-size: 13px;
-  font-weight: 600;
-  color: #333;
-}
-
-/* Punto visual SIEMPRE visible */
-.sku-wheel-labels span::after {
-  content: "● ● ● ● ●";
-  letter-spacing: 2px;
-  font-size: 10px;
-  color: #f28c28;
-  opacity: 0.25;
-}
-
-/* Resalta según valor (opcional visual) */
-.sku-wheel-labels span:nth-child(1)::after {
-  opacity: calc(var(--aromas, 1) / 5);
-}
-
+  .sku-wheel-labels span {
+    background: #fff7ef;
+    border: 1px solid #f6b37f;
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+  }
 
   /* =========================
-     🍸 CÓCTEL RECOMENDADO
+     CÓCTEL
   ========================= */
+
   .sku-cocktail {
     display: grid;
     grid-template-columns: 120px 1fr;
@@ -461,21 +494,28 @@ export default function ProductDetail() {
     border-radius: 14px;
   }
 
-  .sku-cocktail h4 {
-    margin: 0 0 6px;
-    color: #f28c28;
-    font-size: 16px;
-    font-weight: 900;
-  }
+  /* =========================
+     MOBILE AJUSTE FINO
+  ========================= */
 
-  .sku-cocktail ul {
-    margin: 0;
-    padding-left: 16px;
-    font-size: 13px;
-  }
+  @media (max-width: 380px) {
+    .sku-bottle-wrap {
+      width: 60%;
+      top: 110px;
+    }
 
-  .sku-cocktail li {
-    margin-bottom: 4px;
+    .sku-bottle {
+      max-width: 220px;
+    }
+
+    .sku-rating,
+    .sku-price,
+    .sku-stock,
+    .sku-title,
+    .sku-meta,
+    .sku-actions {
+      margin-left: 50%;
+    }
   }
 `}</style>
 

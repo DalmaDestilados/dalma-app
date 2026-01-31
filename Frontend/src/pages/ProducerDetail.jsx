@@ -181,7 +181,13 @@ export default function ProducerDetail() {
             : "none",
         }}
       >
-        <button className="pd-back" onClick={() => navigate(-1)}>←</button>
+        <button
+  className="pd-back"
+  onClick={() => navigate("/productores")}
+>
+  ←
+</button>
+
 
         {carouselImages.length > 1 && (
           <>
