@@ -2,6 +2,9 @@ import React, { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext.jsx";
 
+const API_BASE =
+  import.meta.env.VITE_API_BASE || "http://localhost:3001";
+
 export default function Header({
   searchTerm,
   setSearchTerm,
@@ -81,6 +84,28 @@ export default function Header({
             </text>
           </svg>
         </div>
+
+        {/* 🔥 PERFIL USUARIO EN HEADER */}
+        {user && (
+          <div
+            className="dalma-user"
+            onClick={() => navigate("/profile")}
+          >
+            <div className="dalma-avatar">
+              {user.foto_perfil ? (
+                <img
+                  src={`${API_BASE}/${user.foto_perfil}`}
+                  alt="avatar"
+                />
+              ) : (
+                user.nombre?.charAt(0).toUpperCase()
+              )}
+            </div>
+            <span className="dalma-username">
+              {user.nombre}
+            </span>
+          </div>
+        )}
       </header>
 
       {/* ================= SEARCH BAR ================= */}
@@ -137,8 +162,6 @@ export default function Header({
           </>
         )}
 
-        <button onClick={() => go("/profile")}>👤 Perfil</button>
-
         <div className="dalma-drawer-categories">
           <strong>Categorías</strong>
           {categories.map((c) => (
@@ -154,20 +177,101 @@ export default function Header({
       </aside>
 
       {/* ================= STYLES ================= */}
-      <style>{`
+<style>{`
 .dalma-header {
   background: #000;
-  padding: 18px 0 12px;
-  display: flex;
-  justify-content: center;
+  padding: 18px 16px 12px;
+  display: grid; /* 🔥 CAMBIO */
+  grid-template-columns: 1fr auto 1fr; /* 🔥 */
+  align-items: center;
   box-shadow: 0 6px 18px rgba(0,0,0,0.35);
 }
 
+/* =========================
+   LOGO CENTRADO REAL
+========================= */
 .dalma-logo {
+  grid-column: 2; /* 🔥 CENTRO EXACTO */
   width: 260px;
+  cursor: pointer;
+  justify-self: center;
+}
+
+/* =========================
+   PERFIL USUARIO
+========================= */
+.dalma-user {
+  grid-column: 3;
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   cursor: pointer;
 }
 
+/* =========================
+   AVATAR ESFERA PREMIUM
+========================= */
+.dalma-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    #f28c28,
+    #ffb066,
+    #f28c28
+  );
+  padding: 3px;
+  box-shadow: 0 6px 16px rgba(242,140,40,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dalma-avatar img,
+.dalma-avatar span {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #f28c28;
+  color: #111;
+  font-weight: 900;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  object-fit: cover;
+  position: relative;
+}
+
+/* Brillo sutil */
+.dalma-avatar::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(255,255,255,0.45),
+    transparent 60%
+  );
+  pointer-events: none;
+}
+
+/* =========================
+   NOMBRE USUARIO
+========================= */
+.dalma-username {
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* =========================
+   SEARCH
+========================= */
 .dalma-search-wrap {
   display: grid;
   grid-template-columns: 42px 1fr;
@@ -212,6 +316,9 @@ export default function Header({
   font-size: 15px;
 }
 
+/* =========================
+   OVERLAY
+========================= */
 .dalma-overlay {
   position: fixed;
   inset: 0;
@@ -219,6 +326,9 @@ export default function Header({
   z-index: 90;
 }
 
+/* =========================
+   DRAWER
+========================= */
 .dalma-drawer {
   position: fixed;
   top: 0;
@@ -278,7 +388,8 @@ export default function Header({
   color: #111;
   font-weight: 900;
 }
-      `}</style>
+`}</style>
+
     </>
   );
 }

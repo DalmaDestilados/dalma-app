@@ -7,10 +7,16 @@ import pool from "../config/db.js";
 // ADMIN
 // =====================
 
-// Crear evento
+// Crear evento (GLOBAL – SIN DESTILERÍA)  ⭐ NUEVO
 export const crearEvento = async (req, res) => {
   try {
-    const { titulo, fecha } = req.body;
+    const {
+      titulo,
+      descripcion,
+      categoria,
+      ubicacion,
+      fecha
+    } = req.body;
 
     if (!titulo || !fecha) {
       return res.status(400).json({
@@ -18,13 +24,20 @@ export const crearEvento = async (req, res) => {
       });
     }
 
-    const id = await Evento.crear(req.body);
+    // 👉 Evento GLOBAL → id_destileria = NULL
+    const [result] = await pool.query(
+      `INSERT INTO eventos
+       (titulo, descripcion, categoria, ubicacion, fecha, id_destileria)
+       VALUES (?, ?, ?, ?, ?, NULL)`,
+      [titulo, descripcion, categoria, ubicacion, fecha]
+    );
 
     res.status(201).json({
-      message: "Evento creado correctamente",
-      id_evento: id,
+      message: "Evento global creado correctamente",
+      id_evento: result.insertId,
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Error al crear evento" });
   }
 };
@@ -132,7 +145,11 @@ export const subirImagenEvento = async (req, res) => {
   }
 };
 
-// ADMIN: eventos por destilería
+// =====================
+// ADMIN – DESTILERÍA
+// =====================
+
+// eventos por destilería
 export const obtenerEventosPorDestileria = async (req, res) => {
   try {
     const { id_destileria } = req.params;
@@ -146,7 +163,7 @@ export const obtenerEventosPorDestileria = async (req, res) => {
   }
 };
 
-// ADMIN: crear evento para destilería
+// crear evento para destilería
 export const crearEventoParaDestileria = async (req, res) => {
   try {
     const { id_destileria } = req.params;
@@ -156,4 +173,3 @@ export const crearEventoParaDestileria = async (req, res) => {
     res.status(500).json({ error: "Error al crear evento" });
   }
 };
-

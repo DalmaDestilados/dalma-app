@@ -23,47 +23,53 @@ export function AuthProvider({ children }) {
   const [isResetting, setIsResetting] = useState(false);
 
   const api = axios.create({
-  baseURL: API_AUTH,
-});
+    baseURL: API_AUTH,
+  });
 
-// INTERCEPTOR
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+  // INTERCEPTOR
+  api.interceptors.request.use((config) => {
+    const token = localStorage.getItem("token");
 
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
 
-  return config;
-});
-
+    return config;
+  });
 
   /* =========================
      GET ME
   ========================= */
   async function getMe() {
-  if (isGettingMe) return user;
+    if (isGettingMe) return user;
 
-  try {
-    isGettingMe = true;
-
-    const res = await api.get("/me");
-    const usuario = res.data || null;
-
-    if (usuario) {
-      setUser(usuario);
-      setIsAuthed(true);
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setUser(null);
+      setIsAuthed(false);
+      return null;
     }
 
-    return usuario;
-  } catch {
-    setUser(null);
-    setIsAuthed(false);
-    return null;
-  } finally {
-    isGettingMe = false;
+    try {
+      isGettingMe = true;
+
+      const res = await api.get("/me");
+      const usuario = res.data || null;
+
+      if (usuario) {
+        setUser(usuario);
+        setIsAuthed(true);
+      }
+
+      return usuario;
+    } catch {
+      setUser(null);
+      setIsAuthed(false);
+      return null;
+    } finally {
+      isGettingMe = false;
+    }
   }
-}
 
   useEffect(() => {
     (async () => {
@@ -80,25 +86,23 @@ api.interceptors.request.use((config) => {
     isLogging = true;
 
     try {
-    const res = await api.post("/login", {
-  email: form.email,
-  password: form.password,
-});
+      const res = await api.post("/login", {
+        email: form.email,
+        password: form.password,
+      });
 
-const { token, user } = res.data;
+      const { token, user } = res.data;
 
-// GUARDAR TOKEN
-if (token) {
-  localStorage.setItem("token", token);
-}
+      if (token) {
+        localStorage.setItem("token", token);
+      }
 
-if (user) {
-  setUser(user);
-  setIsAuthed(true);
-}
+      if (user) {
+        setUser(user);
+        setIsAuthed(true);
+      }
 
-return user;
-
+      return user;
     } catch (err) {
       throw new Error(
         err.response?.data?.message || "Credenciales incorrectas"
@@ -109,27 +113,26 @@ return user;
   }
 
   /* =========================
-     REGISTER (ALINEADO A Register.jsx)
+     REGISTER
   ========================= */
-async function register(form) {
-  try {
-    const res = await api.post("/register", {
-      nombre: form.nombre,
-      email: form.email,
-      password: form.password,
-      fecha_nacimiento: form.fecha_nacimiento,
-      telefono: form.telefono,
-      tipoCuenta: form.tipoCuenta,
-    });
+  async function register(form) {
+    try {
+      const res = await api.post("/register", {
+        nombre: form.nombre,
+        email: form.email,
+        password: form.password,
+        fecha_nacimiento: form.fecha_nacimiento,
+        telefono: form.telefono,
+        tipoCuenta: form.tipoCuenta,
+      });
 
-    return res.data;
-  } catch (err) {
-    throw new Error(
-      err.response?.data?.message || "Error al registrar usuario"
-    );
+      return res.data;
+    } catch (err) {
+      throw new Error(
+        err.response?.data?.message || "Error al registrar usuario"
+      );
+    }
   }
-}
-
 
   /* =========================
      LOGOUT
@@ -137,6 +140,7 @@ async function register(form) {
   function logout() {
     setUser(null);
     setIsAuthed(false);
+    localStorage.removeItem("token");
   }
 
   /* =========================
@@ -187,9 +191,7 @@ async function register(form) {
       return res.data?.message;
     } catch (err) {
       if (err.response?.status === 429) {
-        throw new Error(
-          "Demasiados intentos. Espera un momento."
-        );
+        throw new Error("Demasiados intentos. Espera un momento.");
       }
       throw new Error(
         err.response?.data?.message || "No se pudo cambiar la contraseña"
@@ -206,6 +208,7 @@ async function register(form) {
     <AuthContext.Provider
       value={{
         user,
+        setUser, // ✅ agregado para Profile.jsx
         usuarios: user,
         isAuthed,
         booting,

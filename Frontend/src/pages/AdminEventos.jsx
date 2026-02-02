@@ -24,19 +24,20 @@ export default function AdminEventos() {
   });
 
   /* =========================
-     CARGAR EVENTOS POR DESTILERÍA
+     CARGAR EVENTOS (ADMIN)
   ========================= */
   useEffect(() => {
-    if (!idDestileria) return;
     fetchEventos();
   }, [idDestileria]);
 
   async function fetchEventos() {
     try {
       setError("");
-      const data = await apiFetch(
-        `/eventos/destileria/${idDestileria}`
-      );
+
+      const data = idDestileria
+        ? await apiFetch(`/eventos/destileria/${idDestileria}`) // admin
+        : await apiFetch(`/eventos`); // admin (eventos globales)
+
       setEventos(data);
     } catch (err) {
       console.error(err);
@@ -82,7 +83,9 @@ export default function AdminEventos() {
   }
 
   /* =========================
-     GUARDAR EVENTO (DESTILERÍA)
+     GUARDAR EVENTO
+     - GLOBAL si no hay id_destileria
+     - DESTILERÍA si existe
   ========================= */
   async function handleSubmit(e) {
     e.preventDefault();
@@ -91,6 +94,7 @@ export default function AdminEventos() {
 
     try {
       let eventoId;
+      let res;
 
       if (editingId) {
         await apiFetch(`/eventos/${editingId}`, {
@@ -99,19 +103,27 @@ export default function AdminEventos() {
         });
         eventoId = editingId;
       } else {
-        // 🔥 RUTA CORRECTA POR DESTILERÍA
-        const res = await apiFetch(
-          `/eventos/destileria/${idDestileria}`,
-          {
+        if (idDestileria) {
+          // EVENTO DE DESTILERÍA (ADMIN)
+          res = await apiFetch(
+            `/eventos/destileria/${idDestileria}`,
+            {
+              method: "POST",
+              body: JSON.stringify(form),
+            }
+          );
+        } else {
+          // EVENTO GLOBAL (ADMIN)
+          res = await apiFetch(`/eventos`, {
             method: "POST",
             body: JSON.stringify(form),
-          }
-        );
+          });
+        }
         eventoId = res.id_evento;
       }
 
       // subir imagen
-      if (imageFile) {
+      if (imageFile && eventoId) {
         const fd = new FormData();
         fd.append("imagen", imageFile);
 
@@ -137,7 +149,10 @@ export default function AdminEventos() {
         ← Volver
       </button>
 
-      <h2>Gestión de Eventos</h2>
+      <h2>
+        Gestión de Eventos
+        {idDestileria ? " · Destilería" : " · Globales"}
+      </h2>
 
       {error && <p className="error">{error}</p>}
 

@@ -5,20 +5,43 @@ import crypto from 'crypto';
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const { id } = req.params;
 
-    const uploadPath = path.join(
-      'uploads',
-      'destilerias',
-      id,
-      'persona'
-    );
+    // 🔥 SI VIENE ID POR PARAM → DESTILERÍA (COMPORTAMIENTO ORIGINAL)
+    if (req.params && req.params.id) {
+      const { id } = req.params;
 
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
+      const uploadPath = path.join(
+        'uploads',
+        'destilerias',
+        id,
+        'persona'
+      );
+
+      if (!fs.existsSync(uploadPath)) {
+        fs.mkdirSync(uploadPath, { recursive: true });
+      }
+
+      return cb(null, uploadPath);
     }
 
-    cb(null, uploadPath);
+    // 🔥 NUEVO: PERFIL DE USUARIO (DESDE AUTH)
+    if (req.user && req.user.id_usuario) {
+      const uploadPath = path.join(
+        'uploads',
+        'usuarios',
+        String(req.user.id_usuario),
+        'perfil'
+      );
+
+      if (!fs.existsSync(uploadPath)) {
+        fs.mkdirSync(uploadPath, { recursive: true });
+      }
+
+      return cb(null, uploadPath);
+    }
+
+    // ❌ Fallback de seguridad
+    cb(new Error('No se pudo determinar el destino de subida'));
   },
 
   filename: (req, file, cb) => {

@@ -1,14 +1,53 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "../AuthContext.jsx";
+import { apiFetch } from "../api";
+
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
 export default function Profile() {
-  const { user, logout } = useAuth();
+  const { user, logout, setUser } = useAuth();
 
+  const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(user?.nombre || "");
+
+  const [name, setName] = useState("");
   const [photo, setPhoto] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [error, setError] = useState("");
 
+  /* =========================
+     CARGAR PERFIL DESDE DB
+  ========================= */
+  useEffect(() => {
+    if (!user) return;
+
+    async function fetchPerfil() {
+      try {
+        const data = await apiFetch("/usuarios/perfil");
+
+        setName(data.nombre || "");
+
+        if (data.foto_perfil) {
+          setPreview(`${API_BASE}/${data.foto_perfil}`);
+        }
+
+        // sincroniza AuthContext
+        setUser((prev) => ({
+          ...prev,
+          nombre: data.nombre,
+          foto_perfil: data.foto_perfil,
+        }));
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    fetchPerfil();
+  }, [user, setUser]);
+
+  /* =========================
+     FOTO PREVIEW
+  ========================= */
   function handleImageChange(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -17,10 +56,54 @@ export default function Profile() {
     setPreview(URL.createObjectURL(file));
   }
 
-  function handleSave(e) {
+  /* =========================
+     GUARDAR PERFIL
+  ========================= */
+  async function handleSave(e) {
     e.preventDefault();
-    alert("Perfil actualizado (simulado)\n\n✔ Nombre\n✔ Foto");
-    setEditing(false);
+    setLoading(true);
+    setError("");
+
+    try {
+      /* 1️⃣ Actualizar nombre */
+      await apiFetch("/usuarios/perfil", {
+        method: "PUT",
+        body: JSON.stringify({ nombre: name }),
+      });
+
+      let fotoPerfil = user.foto_perfil;
+
+      /* 2️⃣ Subir imagen (si hay) */
+      if (photo) {
+        const fd = new FormData();
+        fd.append("imagen", photo);
+
+        const imgRes = await apiFetch("/usuarios/perfil/foto", {
+          method: "POST",
+          body: fd,
+        });
+
+        fotoPerfil = imgRes.foto_perfil;
+      }
+
+      /* 3️⃣ Actualizar contexto */
+      setUser({
+        ...user,
+        nombre: name,
+        foto_perfil: fotoPerfil,
+      });
+
+      setEditing(false);
+    } catch (err) {
+      console.error(err);
+      setError("Error al actualizar perfil");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (!user) {
+    return <p style={{ padding: 20 }}>No hay usuario logueado.</p>;
   }
 
   return (
@@ -31,7 +114,7 @@ export default function Profile() {
             {preview ? (
               <img src={preview} alt="avatar" />
             ) : (
-              user?.email?.charAt(0).toUpperCase() || "👤"
+              user.email.charAt(0).toUpperCase()
             )}
           </div>
 
@@ -39,75 +122,81 @@ export default function Profile() {
           <p className="profile-subtitle">Cuenta Dalma</p>
         </div>
 
-        {user ? (
-          editing ? (
-            <form onSubmit={handleSave} className="profile-form">
-              <label>
-                Nombre público
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Tu nombre"
-                />
-              </label>
+        {error && <p className="error">{error}</p>}
 
-              <label className="file-label">
-                Foto de perfil
-                <input type="file" accept="image/*" onChange={handleImageChange} />
-              </label>
+        {editing ? (
+          <form onSubmit={handleSave} className="profile-form">
+            <label>
+              Nombre público
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </label>
 
-              <div className="profile-actions">
-                <button
-                  type="button"
-                  className="btn-outline"
-                  onClick={() => setEditing(false)}
-                >
-                  Cancelar
-                </button>
-                <button type="submit" className="btn-primary">
-                  Guardar cambios
-                </button>
-              </div>
-            </form>
-          ) : (
-            <>
-              <div className="profile-info">
-                <div className="info-row">
-                  <span className="label">Correo</span>
-                  <span className="value">{user.email}</span>
-                </div>
+            <label className="file-label">
+              Foto de perfil
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+              />
+            </label>
 
-                <div className="info-row">
-                  <span className="label">Nombre</span>
-                  <span className="value">{name || "No definido"}</span>
-                </div>
-
-                {user.role && (
-                  <div className="info-row">
-                    <span className="label">Rol</span>
-                    <span className="badge">
-                      {user.role === 3 ? "Administrador" : "Usuario"}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className="profile-actions">
-                <button
-                  className="btn-outline"
-                  onClick={() => setEditing(true)}
-                >
-                  Editar perfil
-                </button>
-                <button className="btn-danger" onClick={logout}>
-                  Cerrar sesión
-                </button>
-              </div>
-            </>
-          )
+            <div className="profile-actions">
+              <button
+                type="button"
+                className="btn-outline"
+                onClick={() => setEditing(false)}
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={loading}
+              >
+                {loading ? "Guardando..." : "Guardar cambios"}
+              </button>
+            </div>
+          </form>
         ) : (
-          <p>No hay usuario logueado.</p>
+          <>
+            <div className="profile-info">
+              <div className="info-row">
+                <span className="label">Correo</span>
+                <span className="value">{user.email}</span>
+              </div>
+
+              <div className="info-row">
+                <span className="label">Nombre</span>
+                <span className="value">
+                  {user.nombre || "No definido"}
+                </span>
+              </div>
+
+              <div className="info-row">
+                <span className="label">Rol</span>
+                <span className="badge">
+                  {user.role === 3 ? "Administrador" : "Usuario"}
+                </span>
+              </div>
+            </div>
+
+            <div className="profile-actions">
+              <button
+                className="btn-outline"
+                onClick={() => setEditing(true)}
+              >
+                Editar perfil
+              </button>
+              <button className="btn-danger" onClick={logout}>
+                Cerrar sesión
+              </button>
+            </div>
+          </>
         )}
       </div>
 
@@ -115,30 +204,10 @@ export default function Profile() {
         .profile-page {
           min-height: calc(100vh - 80px);
           display: flex;
-          align-items: flex-start; /* 🔥 CAMBIO CLAVE */
           justify-content: center;
+          align-items: flex-start;
           background: #f7f7f7;
-          padding: 40px 20px 20px; /* 🔥 ESPACIO SUPERIOR */
-        }
-
-        .profile-card {
-          width: 100%;
-          max-width: 420px;
-          background: #fff;
-          border-radius: 20px;
-          padding: 24px;
-          box-shadow: 0 20px 40px rgba(0,0,0,.12);
-        }
-
-        /* todo lo demás IGUAL */
-  
-        .profile-page {
-          min-height: calc(100vh - 80px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: #f7f7f7;
-          padding: 20px;
+          padding: 40px 20px;
         }
 
         .profile-card {
@@ -174,11 +243,6 @@ export default function Profile() {
           width: 100%;
           height: 100%;
           object-fit: cover;
-        }
-
-        .profile-header h2 {
-          margin: 0;
-          font-weight: 900;
         }
 
         .profile-subtitle {
@@ -226,8 +290,7 @@ export default function Profile() {
           margin-bottom: 14px;
         }
 
-        .profile-form input[type="text"],
-        .profile-form input[type="file"] {
+        .profile-form input {
           margin-top: 6px;
           padding: 10px;
           border-radius: 8px;
@@ -261,6 +324,12 @@ export default function Profile() {
         .btn-danger {
           background: #e74c3c;
           color: #fff;
+        }
+
+        .error {
+          color: red;
+          text-align: center;
+          margin-bottom: 10px;
         }
       `}</style>
     </div>

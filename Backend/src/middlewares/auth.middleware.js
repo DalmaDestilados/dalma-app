@@ -15,10 +15,12 @@ const authMiddleware = (req, res, next) => {
     // 🔧 NORMALIZAMOS el usuario para TODO el backend
     req.usuario = {
       id_usuario: decoded.id,
-      // compatibilidad: rol antiguo o id_rol nuevo
       rol: decoded.rol ?? decoded.id_rol,
       id_rol: decoded.id_rol ?? decoded.rol
     };
+
+    // 🔥 NUEVO: alias estándar (CLAVE)
+    req.user = req.usuario;
 
     next();
   } catch (error) {
