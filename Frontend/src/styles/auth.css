@@ -260,3 +260,105 @@
   outline: none;
 }
 
+/* =================================================
+   LANDING DALMA – VERSIÓN FINAL LIMPIA Y PRO
+================================================ */
+
+/* CONTEXTO LANDING */
+.landing {
+  background:
+    radial-gradient(900px 500px at 15% 15%, rgba(242,140,40,0.18), transparent 60%),
+    radial-gradient(900px 500px at 85% 70%, rgba(120,170,255,0.18), transparent 60%),
+    linear-gradient(135deg, var(--bg1), var(--bg2));
+}
+
+/* CARD */
+.landing-card {
+  text-align: center;
+  padding: 36px 42px;
+}
+
+/* BRAND */
+.landing-brand {
+  justify-content: center;
+  margin-bottom: 22px;
+}
+
+/* HERO */
+.landing-hero h1 {
+  font-size: 32px;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+
+.landing-hero p {
+  max-width: 560px;
+  margin: 0 auto;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+/* CTA */
+.landing-cta {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 26px;
+}
+
+.landing-cta.secondary {
+  margin-top: 14px;
+}
+
+/* BOTONES */
+.btn-primary {
+  box-shadow: 0 10px 22px rgba(242,140,40,0.35);
+}
+
+.btn-secondary {
+  background: linear-gradient(
+    135deg,
+    rgba(242,140,40,0.9),
+    rgba(242,140,40,0.55)
+  );
+  color: #111;
+}
+
+/* FOOTER */
+.landing-footer {
+  margin-top: 26px;
+  font-size: 12px;
+  color: var(--muted2);
+}
+
+.landing-footer span {
+  display: block;
+  margin-top: 6px;
+}
+
+/* ANIMACIÓN SUAVE */
+.landing-card {
+  animation: landingFade 0.6s ease-out both;
+}
+
+@keyframes landingFade {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* RESPONSIVE */
+@media (max-width: 640px) {
+  .landing-card {
+    padding: 26px 22px;
+  }
+
+  .landing-hero h1 {
+    font-size: 26px;
+  }
+}
