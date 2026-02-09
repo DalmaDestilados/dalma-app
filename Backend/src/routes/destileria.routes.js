@@ -98,7 +98,7 @@ router.get("/:id/perfil", async (req, res) => {
 });
 
 /* =====================================================
-   🔥 NUEVO: MEET THE MASTERS (PÚBLICO)
+  
    Devuelve maestros reales con su destilería
 ===================================================== */
 router.get("/public/masters", async (req, res) => {
@@ -131,7 +131,7 @@ router.get("/public/masters", async (req, res) => {
 });
 
 /* =========================
-   🔐 RUTAS ADMIN
+    RUTAS ADMIN
 ========================= */
 
 const ROL_ADMIN = 3;
@@ -140,7 +140,7 @@ router.use(authMiddleware, verificarRol(ROL_ADMIN));
 router.get("/admin/list", obtenerDestilerias);
 router.get("/admin/:id", obtenerDestileriaPorId);
 
-/* ✅ CREAR DESTILERÍA (SIN IMAGEN) */
+/*  CREAR DESTILERÍA (SIN IMAGEN) */
 router.post("/", crearDestileria);
 
 router.put("/:id", actualizarDestileria);
@@ -148,7 +148,7 @@ router.delete("/:id", eliminarDestileria);
 router.patch("/:id/mostrar", mostrarDestileria);
 
 /* =========================
-   🖼 LOGO DESTILERÍA
+    LOGO DESTILERÍA
 ========================= */
 
 router.post(

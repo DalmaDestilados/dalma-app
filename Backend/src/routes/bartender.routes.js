@@ -1,40 +1,78 @@
-import express from 'express';
-import authMiddleware from '../middlewares/auth.middleware.js';
-import verificarRol from '../middlewares/rol.middleware.js';
+import express from "express";
+import authMiddleware from "../middlewares/auth.middleware.js";
+import verificarRol from "../middlewares/rol.middleware.js";
+import { uploadBartender } from "../middlewares/uploadBartender.middleware.js";
 
 import {
-  crearBartender,
-  actualizarBartender,
-  eliminarBartender,
   obtenerMiPerfil,
+  crearMiPerfilBartender,
+  actualizarMiPerfilBartender,
   obtenerBartendersPublicos,
   obtenerBartenderPublicoPorId,
-  obtenerBartendersPorRegion
-} from '../controllers/bartender.controller.js';
+  cambiarEstadoBartender,
+  obtenerBartendersAdmin,
+} from "../controllers/bartender.controller.js";
 
 const router = express.Router();
 
-const ROL_ADMIN = 3;
 const ROL_BARTENDER = 2;
+const ROL_ADMIN = 3;
 
-// Rutas publicas
-router.get('/public', obtenerBartendersPublicos);
-router.get('/public/:id', obtenerBartenderPublicoPorId);
-router.get('/public/region/:region', obtenerBartendersPorRegion);
+/* =========================
+   PUBLICO (SIN AUTH)
+========================= */
+router.get("/public", obtenerBartendersPublicos);
+router.get("/public/:id", obtenerBartenderPublicoPorId);
 
-// Rutas privadas(Solo rol bartender y admin)
+/* =========================
+   AUTH REQUIRED
+========================= */
 router.use(authMiddleware);
 
-// Mi perfil (bartender)
-router.get('/me', verificarRol(ROL_BARTENDER), obtenerMiPerfil);
+/* =========================
+   BARTENDER (ROL 2)
+========================= */
+router.get(
+  "/me",
+  verificarRol(ROL_BARTENDER),
+  obtenerMiPerfil
+);
 
-// Crear bartender (ADMIN)
-router.post('/', verificarRol(ROL_ADMIN), crearBartender);
+router.post(
+  "/me",
+  verificarRol(ROL_BARTENDER),
+  crearMiPerfilBartender
+);
 
-// Actualizar perfil (ADMIN o dueño)
-router.put('/:id', verificarRol(ROL_ADMIN, ROL_BARTENDER), actualizarBartender);
+router.put(
+  "/me",
+  verificarRol(ROL_BARTENDER),
+  actualizarMiPerfilBartender
+);
 
-// Eliminar bartender (ADMIN)
-router.delete('/:id', verificarRol(ROL_ADMIN), eliminarBartender);
+router.post(
+  "/me/upload",
+  verificarRol(ROL_BARTENDER),
+  uploadBartender.fields([
+    { name: "foto_perfil", maxCount: 1 },
+    { name: "banner_perfil", maxCount: 1 },
+  ]),
+  actualizarMiPerfilBartender
+);
+
+/* =========================
+   ADMIN (ROL 3)
+========================= */
+router.get(
+  "/admin",
+  verificarRol(ROL_ADMIN),
+  obtenerBartendersAdmin
+);
+
+router.patch(
+  "/:id/estado",
+  verificarRol(ROL_ADMIN),
+  cambiarEstadoBartender
+);
 
 export default router;

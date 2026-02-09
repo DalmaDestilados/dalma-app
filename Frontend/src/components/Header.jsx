@@ -18,14 +18,14 @@ export default function Header({
 
   const isHome = location.pathname === "/home";
 
-  // ✅ RUTAS DONDE EL BUSCADOR DEBE ESTAR ACTIVO
+  // Rutas donde el buscador está activo
   const isProducerList = location.pathname === "/productores";
   const isProductList =
     location.pathname === "/productos" ||
     /^\/productores\/\d+\/productos$/.test(location.pathname) ||
     location.pathname === "/skus";
 
-  // 🔥 OCULTAR SOLO EL BUSCADOR (NO EL BURGER)
+  // Ocultar solo el buscador
   const hideHeaderSearch =
     !(isProducerList || isProductList) &&
     (
@@ -53,7 +53,9 @@ export default function Header({
     if (!isHome) navigate("/home");
   }
 
+  // ROLES
   const esAdmin = !booting && user?.rol === 3;
+  const esBartender = !booting && user?.rol === 2;
 
   return (
     <>
@@ -85,7 +87,7 @@ export default function Header({
           </svg>
         </div>
 
-        {/* 🔥 PERFIL USUARIO EN HEADER */}
+        {/* PERFIL USUARIO */}
         {user && (
           <div
             className="dalma-user"
@@ -98,17 +100,15 @@ export default function Header({
                   alt="avatar"
                 />
               ) : (
-                user.nombre?.charAt(0).toUpperCase()
+                <span>{user.nombre?.charAt(0).toUpperCase()}</span>
               )}
             </div>
-            <span className="dalma-username">
-              {user.nombre}
-            </span>
+            <span className="dalma-username">{user.nombre}</span>
           </div>
         )}
       </header>
 
-      {/* ================= SEARCH BAR ================= */}
+      {/* ================= SEARCH ================= */}
       <div className="dalma-search-wrap">
         <button className="dalma-burger" onClick={() => setOpen(true)}>
           <span />
@@ -137,6 +137,7 @@ export default function Header({
         <button onClick={() => go("/productores")}>🏭 Destilerías</button>
         <button onClick={() => go("/productos")}>🧴 Productos</button>
 
+        {/* ===== ADMIN ===== */}
         {esAdmin && (
           <>
             <button
@@ -159,9 +160,27 @@ export default function Header({
             >
               🛠️ Gestionar Eventos
             </button>
+
+            <button
+              className="dalma-admin-btn"
+              onClick={() => go("/admin/bartenders")}
+            >
+              🍸 Gestionar Bartenders
+            </button>
           </>
         )}
 
+        {/* ===== BARTENDER ===== */}
+        {esBartender && (
+          <button
+            className="dalma-admin-btn"
+            onClick={() => go("/bartenders/me")}
+          >
+            🍸 Mi perfil bartender
+          </button>
+        )}
+
+        {/* ===== CATEGORÍAS ===== */}
         <div className="dalma-drawer-categories">
           <strong>Categorías</strong>
           {categories.map((c) => (
@@ -177,29 +196,23 @@ export default function Header({
       </aside>
 
       {/* ================= STYLES ================= */}
-<style>{`
+      <style>{`
 .dalma-header {
   background: #000;
   padding: 18px 16px 12px;
-  display: grid; /* 🔥 CAMBIO */
-  grid-template-columns: 1fr auto 1fr; /* 🔥 */
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   box-shadow: 0 6px 18px rgba(0,0,0,0.35);
 }
 
-/* =========================
-   LOGO CENTRADO REAL
-========================= */
 .dalma-logo {
-  grid-column: 2; /* 🔥 CENTRO EXACTO */
+  grid-column: 2;
   width: 260px;
   cursor: pointer;
   justify-self: center;
 }
 
-/* =========================
-   PERFIL USUARIO
-========================= */
 .dalma-user {
   grid-column: 3;
   justify-self: end;
@@ -209,21 +222,12 @@ export default function Header({
   cursor: pointer;
 }
 
-/* =========================
-   AVATAR ESFERA PREMIUM
-========================= */
 .dalma-avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(
-    135deg,
-    #f28c28,
-    #ffb066,
-    #f28c28
-  );
+  background: linear-gradient(135deg,#f28c28,#ffb066,#f28c28);
   padding: 3px;
-  box-shadow: 0 6px 16px rgba(242,140,40,0.55);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -237,41 +241,17 @@ export default function Header({
   background: #f28c28;
   color: #111;
   font-weight: 900;
-  font-size: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  object-fit: cover;
-  position: relative;
 }
 
-/* Brillo sutil */
-.dalma-avatar::after {
-  content: "";
-  position: absolute;
-  inset: 6px;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle at 30% 30%,
-    rgba(255,255,255,0.45),
-    transparent 60%
-  );
-  pointer-events: none;
-}
-
-/* =========================
-   NOMBRE USUARIO
-========================= */
 .dalma-username {
   color: #fff;
   font-weight: 700;
   font-size: 14px;
-  white-space: nowrap;
 }
 
-/* =========================
-   SEARCH
-========================= */
 .dalma-search-wrap {
   display: grid;
   grid-template-columns: 42px 1fr;
@@ -291,7 +271,6 @@ export default function Header({
   justify-content: center;
   align-items: center;
   gap: 4px;
-  cursor: pointer;
 }
 
 .dalma-burger span {
@@ -313,12 +292,8 @@ export default function Header({
   border: none;
   outline: none;
   background: transparent;
-  font-size: 15px;
 }
 
-/* =========================
-   OVERLAY
-========================= */
 .dalma-overlay {
   position: fixed;
   inset: 0;
@@ -326,9 +301,6 @@ export default function Header({
   z-index: 90;
 }
 
-/* =========================
-   DRAWER
-========================= */
 .dalma-drawer {
   position: fixed;
   top: 0;
@@ -351,13 +323,11 @@ export default function Header({
 
 .dalma-drawer button {
   background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
   border-radius: 14px;
   padding: 12px 14px;
   color: #fff;
   font-weight: 700;
   text-align: left;
-  cursor: pointer;
 }
 
 .dalma-admin-btn {
@@ -380,7 +350,6 @@ export default function Header({
   padding: 8px 12px;
   border: none;
   color: #fff;
-  cursor: pointer;
 }
 
 .dalma-cat-btn.active {
@@ -389,7 +358,6 @@ export default function Header({
   font-weight: 900;
 }
 `}</style>
-
     </>
   );
 }

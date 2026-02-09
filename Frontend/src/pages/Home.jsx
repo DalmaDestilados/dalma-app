@@ -1,5 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import avatarFallback from "../assets/Masters/MaestroDestilador.jpg";
+
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+
+function getImageUrl(path) {
+  if (!path) return null;
+  return `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
+}
 
 // =========================
 // Función de búsqueda y filtro
@@ -20,6 +28,7 @@ function matchesSearchAndCategory({ searchTerm, category, product, producer }) {
 
   return matchText && matchCategory;
 }
+
 
 // =========================
 // SVG botella placeholder
@@ -52,6 +61,8 @@ function BottleSVG({ style }) {
 export default function Home({ searchTerm = "", category = "Todos" }) {
   const [products, setProducts] = useState([]);
   const [producers, setProducers] = useState([]);
+  const [bartenders, setBartenders] = useState([]);
+
 
   useEffect(() => {
     fetch("http://localhost:3001/api/productos/public")
@@ -63,6 +74,12 @@ export default function Home({ searchTerm = "", category = "Todos" }) {
       .then((r) => r.json())
       .then((d) => setProducers(d || []))
       .catch(() => setProducers([]));
+
+    fetch("http://localhost:3001/api/bartenders/public")
+      .then((r) => r.json())
+      .then((d) => setBartenders(d || []))
+      .catch(() => setBartenders([]));
+
   }, []);
 
   const getProducer = (producerId) =>
@@ -94,6 +111,13 @@ const searchedProducers = useMemo(() => {
     d.nombre_comercial?.toLowerCase().includes(searchLower)
   );
 }, [searchLower, producers]);
+
+const searchedBartenders = useMemo(() => {
+  if (!searchLower) return [];
+  return bartenders.filter((b) =>
+    b.nombre_publico?.toLowerCase().includes(searchLower)
+  );
+}, [searchLower, bartenders]);
 
   // =========================
   // Filtrado top rated
@@ -215,7 +239,16 @@ function next() {
     {d.nombre_comercial}
   </Link>
 ))}
-
+  {/* BARTENDERS */}
+{searchedBartenders.map((b) => (
+  <Link
+    key={b.id_bartender}
+    to={`/bartenders/${b.id_bartender}`}
+    style={{ display: "block", marginBottom: 6 }}
+  >
+    🍸 {b.nombre_publico}
+  </Link>
+))}
 
 {/* PRODUCTOS */}
 {searchedProducts.map((p) => (
@@ -523,6 +556,108 @@ function next() {
           </div>
         </div>
       </section>
+            {/* MEET THE BARTENDERS */}
+      <section className="home-section">
+        <div className="section-title" style={{ textTransform: "none" }}>
+          Meet the Bartenders 🍸
+        </div>
+
+        <div
+          style={{
+            background: "#fff",
+            borderRadius: 18,
+            border: "1px solid rgba(0,0,0,0.08)",
+            boxShadow: "0 16px 32px rgba(0,0,0,0.08)",
+            padding: 14,
+          }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+              gap: 14,
+            }}
+          >
+            {bartenders.length === 0 && (
+              <div style={{ gridColumn: "1 / -1", textAlign: "center", opacity: 0.7 }}>
+                No hay bartenders disponibles.
+              </div>
+            )}
+
+            {bartenders.slice(0, 4).map((b) => (
+              <Link
+                key={b.id_bartender}
+                to={`/bartenders/${b.id_bartender}`}
+                style={{
+                  textDecoration: "none",
+                  color: "inherit",
+                  display: "grid",
+                  gap: 8,
+                }}
+              >
+                <div
+                  style={{
+                    height: 170,
+                    borderRadius: 12,
+                    overflow: "hidden",
+                    border: "1px solid rgba(0,0,0,0.10)",
+                    background: "rgba(0,0,0,0.04)",
+                  }}
+                >
+                  <img
+                    src={getImageUrl(b.foto_perfil) || avatarFallback}
+                    alt={b.nombre_publico}
+                    onError={(e) => {
+                      e.currentTarget.src = avatarFallback;
+                    }}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
+                </div>
+
+                <div style={{ fontWeight: 1000, color: "var(--dalma-orange)" }}>
+                  {b.nombre_publico}
+                </div>
+
+                <div
+                  style={{
+                    fontWeight: 900,
+                    fontSize: 13,
+                    color: "rgba(0,0,0,0.72)",
+                    marginTop: -4,
+                  }}
+                >
+                  {b.especialidad || "Bartender profesional"}
+                </div>
+
+                {(b.ciudad || b.region) && (
+                  <div style={{ fontSize: 12, opacity: 0.7 }}>
+                    {[b.ciudad, b.region].filter(Boolean).join(", ")}
+                  </div>
+                )}
+              </Link>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <div style={{ textAlign: "center", marginTop: 14 }}>
+            <Link
+              to="/bartenders"
+              style={{
+                fontWeight: 900,
+                color: "#f28c28",
+                textDecoration: "none",
+              }}
+            >
+              Ver todos los bartenders →
+            </Link>
+          </div>
+        </div>
+      </section>
+
 
       {/* RESULTADOS (solo si hay búsqueda) */}
       {results.length > 0 && (
@@ -564,6 +699,8 @@ function next() {
             })}
           </div>
         </section>
+
+        
       )}
 
       <style>{`

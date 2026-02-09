@@ -12,18 +12,14 @@ const authMiddleware = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // 🔧 NORMALIZAMOS el usuario para TODO el backend
-    req.usuario = {
+    // 🔥 UN SOLO LUGAR
+    req.user = {
       id_usuario: decoded.id,
-      rol: decoded.rol ?? decoded.id_rol,
-      id_rol: decoded.id_rol ?? decoded.rol
+      id_rol: decoded.rol,
     };
 
-    // 🔥 NUEVO: alias estándar (CLAVE)
-    req.user = req.usuario;
-
     next();
-  } catch (error) {
+  } catch {
     return res.status(401).json({ error: "Token inválido o expirado" });
   }
 };
