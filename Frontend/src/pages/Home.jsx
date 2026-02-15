@@ -6,8 +6,11 @@ const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
 function getImageUrl(path) {
   if (!path) return null;
-  return `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
+
+  const cleanPath = path.replace(/\\/g, "/");
+  return `${API_BASE}/${cleanPath.replace(/^\/+/, "")}`;
 }
+
 
 // =========================
 // Función de búsqueda y filtro
@@ -187,6 +190,24 @@ function next() {
     ],
     []
   );
+
+  // =========================
+// 🔥 NUEVO – Masters desde Destilerías
+// =========================
+// =========================
+// 🔥 NUEVO – Masters desde Destilerías (FIX REAL)
+// =========================
+const mastersFromDB = useMemo(() => {
+  return producers
+    .filter((d) => d.persona_nombre)
+    .map((d) => ({
+      id: d.id_destileria,
+      name: d.persona_nombre,
+      role: d.persona_descripcion || "Maestro destilador",
+      photo: getImageUrl(d.persona_url),
+    }));
+}, [producers]);
+
 
   // =========================
   // Resultados de búsqueda
@@ -488,74 +509,86 @@ function next() {
   </div>
 </section>
 
-      {/* MEET THE MASTERS (título + grilla 2x2 con fotos) */}
-      <section className="home-section">
-        <div className="section-title" style={{ textTransform: "none" }}>
-          Meet the Masters!
-        </div>
+     {/* MEET THE MASTERS (título + grilla 2x2 con fotos) */}
+<section className="home-section">
+  <div className="section-title" style={{ textTransform: "none" }}>
+    Meet the Masters!
+  </div>
 
-        <div
-          style={{
-            background: "#fff",
-            borderRadius: 18,
-            border: "1px solid rgba(0,0,0,0.08)",
-            boxShadow: "0 16px 32px rgba(0,0,0,0.08)",
-            padding: 14,
-          }}
-        >
+  <div
+    style={{
+      background: "#fff",
+      borderRadius: 18,
+      border: "1px solid rgba(0,0,0,0.08)",
+      boxShadow: "0 16px 32px rgba(0,0,0,0.08)",
+      padding: 14,
+    }}
+  >
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+        gap: 14,
+      }}
+    >
+      {(mastersFromDB.length ? mastersFromDB : masters).map((m) => (
+        <div key={m.id} style={{ display: "grid", gap: 8 }}>
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-              gap: 14,
+              height: 170,
+              borderRadius: 12,
+              overflow: "hidden",
+              border: "1px solid rgba(0,0,0,0.10)",
+              background: "rgba(0,0,0,0.04)",
             }}
           >
-            {masters.map((m) => (
-              <div key={m.id} style={{ display: "grid", gap: 8 }}>
-                <div
-                  style={{
-                    height: 170,
-                    borderRadius: 12,
-                    overflow: "hidden",
-                    border: "1px solid rgba(0,0,0,0.10)",
-                    background: "rgba(0,0,0,0.04)",
-                  }}
-                >
-                  {m.photo ? (
-                    <img
-                      src={m.photo}
-                      alt={m.name}
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        background: "rgba(0,0,0,0.08)",
-                        color: "#333",
-                        fontWeight: 900,
-                      }}
-                    >
-                      No Image
-                    </div>
-                  )}
-                </div>
+            {m.photo ? (
+              <img
+                src={m.photo}
+                alt={m.name}
+                onError={(e) => {
+                  e.currentTarget.src = avatarFallback;
+                }}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
+            ) : (
+              <img
+                src={avatarFallback}
+                alt="Maestro"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
+            )}
+          </div>
 
-                <div style={{ fontWeight: 1000, color: "var(--dalma-orange)" }}>
-                  {m.name}
-                </div>
-                <div style={{ fontWeight: 900, color: "rgba(0,0,0,0.72)", marginTop: -4 }}>
-                  {m.role}
-                </div>
-              </div>
-            ))}
+          <div style={{ fontWeight: 1000, color: "var(--dalma-orange)" }}>
+            {m.name}
+          </div>
+
+          <div
+            style={{
+              fontWeight: 900,
+              fontSize: 13,
+              color: "rgba(0,0,0,0.72)",
+              marginTop: -4,
+            }}
+          >
+            {m.role}
           </div>
         </div>
-      </section>
+      ))}
+    </div>
+  </div>
+</section>
+
+
             {/* MEET THE BARTENDERS */}
       <section className="home-section">
         <div className="section-title" style={{ textTransform: "none" }}>

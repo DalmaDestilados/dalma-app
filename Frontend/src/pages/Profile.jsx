@@ -11,12 +11,17 @@ export default function Profile() {
   const [editing, setEditing] = useState(false);
 
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
+
   const [photo, setPhoto] = useState(null);
   const [preview, setPreview] = useState(null);
+
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   /* =========================
-     CARGAR PERFIL DESDE DB
+     CARGAR PERFIL
   ========================= */
   useEffect(() => {
     if (!user) return;
@@ -26,16 +31,15 @@ export default function Profile() {
         const data = await apiFetch("/usuarios/perfil");
 
         setName(data.nombre || "");
+        setEmail(data.email || "");
 
         if (data.foto_perfil) {
           setPreview(`${API_BASE}/${data.foto_perfil}`);
         }
 
-        // sincroniza AuthContext
         setUser((prev) => ({
           ...prev,
-          nombre: data.nombre,
-          foto_perfil: data.foto_perfil,
+          ...data,
         }));
       } catch (err) {
         console.error(err);
@@ -43,7 +47,14 @@ export default function Profile() {
     }
 
     fetchPerfil();
-  }, [user, setUser]);
+  }, [user?.id_usuario]);
+
+  /* =========================
+     VALIDAR EMAIL
+  ========================= */
+  function validateEmail(mail) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail);
+  }
 
   /* =========================
      FOTO PREVIEW
@@ -63,17 +74,41 @@ export default function Profile() {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setSuccess("");
 
     try {
+      if (name.trim().length < 3) {
+        throw new Error("El nombre debe tener al menos 3 caracteres");
+      }
+
+      if (!validateEmail(email)) {
+        throw new Error("Correo electrónico inválido");
+      }
+
       /* 1️⃣ Actualizar nombre */
       await apiFetch("/usuarios/perfil", {
         method: "PUT",
         body: JSON.stringify({ nombre: name }),
       });
 
+      /* 2️⃣ Cambiar correo si es distinto */
+      if (email !== user.email) {
+        if (!passwordConfirm) {
+          throw new Error("Debes confirmar tu contraseña");
+        }
+
+        await apiFetch("/usuarios/perfil/email", {
+          method: "PUT",
+          body: JSON.stringify({
+            email,
+            password: passwordConfirm,
+          }),
+        });
+      }
+
       let fotoPerfil = user.foto_perfil;
 
-      /* 2️⃣ Subir imagen (si hay) */
+      /* 3️⃣ Subir imagen */
       if (photo) {
         const fd = new FormData();
         fd.append("imagen", photo);
@@ -86,17 +121,19 @@ export default function Profile() {
         fotoPerfil = imgRes.foto_perfil;
       }
 
-      /* 3️⃣ Actualizar contexto */
+      /* 4️⃣ Actualizar contexto */
       setUser({
         ...user,
         nombre: name,
+        email,
         foto_perfil: fotoPerfil,
       });
 
+      setSuccess("Perfil actualizado correctamente");
       setEditing(false);
+      setPasswordConfirm("");
     } catch (err) {
-      console.error(err);
-      setError("Error al actualizar perfil");
+      setError(err.message || "Error al actualizar perfil");
     } finally {
       setLoading(false);
     }
@@ -117,27 +154,47 @@ export default function Profile() {
               user.email.charAt(0).toUpperCase()
             )}
           </div>
-
-          <h2>Perfil de usuario</h2>
-          <p className="profile-subtitle">Cuenta Dalma</p>
+          <h2>{user.nombre || "Usuario"}</h2>
+          <p className="profile-subtitle">{user.email}</p>
         </div>
 
-        {error && <p className="error">{error}</p>}
+        {error && <div className="alert error">{error}</div>}
+        {success && <div className="alert success">{success}</div>}
 
         {editing ? (
           <form onSubmit={handleSave} className="profile-form">
+
             <label>
               Nombre público
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                required
               />
             </label>
 
+            <label>
+              Correo electrónico
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </label>
+
+            {email !== user.email && (
+              <label>
+                Confirmar contraseña
+                <input
+                  type="password"
+                  value={passwordConfirm}
+                  onChange={(e) => setPasswordConfirm(e.target.value)}
+                />
+              </label>
+            )}
+
             <label className="file-label">
-              Foto de perfil
+              Cambiar foto
               <input
                 type="file"
                 accept="image/*"
@@ -166,21 +223,19 @@ export default function Profile() {
           <>
             <div className="profile-info">
               <div className="info-row">
-                <span className="label">Correo</span>
-                <span className="value">{user.email}</span>
+                <span>Correo</span>
+                <strong>{user.email}</strong>
               </div>
 
               <div className="info-row">
-                <span className="label">Nombre</span>
-                <span className="value">
-                  {user.nombre || "No definido"}
-                </span>
+                <span>Nombre</span>
+                <strong>{user.nombre || "No definido"}</strong>
               </div>
 
               <div className="info-row">
-                <span className="label">Rol</span>
+                <span>Rol</span>
                 <span className="badge">
-                  {user.role === 3 ? "Administrador" : "Usuario"}
+                  {user.id_rol === 3 ? "Administrador" : "Usuario"}
                 </span>
               </div>
             </div>
@@ -202,21 +257,27 @@ export default function Profile() {
 
       <style>{`
         .profile-page {
-          min-height: calc(100vh - 80px);
+          min-height: 100vh;
           display: flex;
           justify-content: center;
-          align-items: flex-start;
-          background: #f7f7f7;
-          padding: 40px 20px;
+          align-items: center;
+          background: linear-gradient(135deg, #f28c28, #ffb066);
+          padding: 20px;
         }
 
         .profile-card {
           width: 100%;
           max-width: 420px;
           background: #fff;
-          border-radius: 20px;
-          padding: 24px;
-          box-shadow: 0 20px 40px rgba(0,0,0,.12);
+          border-radius: 24px;
+          padding: 28px;
+          box-shadow: 0 25px 50px rgba(0,0,0,.2);
+          animation: fadeIn .4s ease;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
 
         .profile-header {
@@ -225,18 +286,20 @@ export default function Profile() {
         }
 
         .profile-avatar {
-          width: 90px;
-          height: 90px;
+          width: 100px;
+          height: 100px;
           border-radius: 50%;
-          margin: 0 auto 10px;
+          margin: 0 auto 15px;
           background: linear-gradient(135deg, #f28c28, #ffb066);
           color: #fff;
-          font-size: 38px;
-          font-weight: 900;
+          font-size: 40px;
+          font-weight: bold;
           display: flex;
           align-items: center;
           justify-content: center;
           overflow: hidden;
+          border: 4px solid #fff;
+          box-shadow: 0 10px 25px rgba(0,0,0,.2);
         }
 
         .profile-avatar img {
@@ -247,40 +310,29 @@ export default function Profile() {
 
         .profile-subtitle {
           font-size: 13px;
-          color: #777;
+          color: #666;
         }
 
         .profile-info {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
           margin-bottom: 20px;
         }
 
         .info-row {
           display: flex;
           justify-content: space-between;
-          padding: 10px;
+          padding: 12px;
           background: #f9f9f9;
-          border-radius: 10px;
-        }
-
-        .label {
-          font-size: 13px;
-          color: #666;
-        }
-
-        .value {
-          font-weight: 700;
+          border-radius: 12px;
+          margin-bottom: 10px;
         }
 
         .badge {
           background: #fde9d8;
           color: #f28c28;
-          padding: 4px 10px;
+          padding: 5px 12px;
           border-radius: 999px;
           font-size: 12px;
-          font-weight: 800;
+          font-weight: bold;
         }
 
         .profile-form label {
@@ -293,8 +345,15 @@ export default function Profile() {
         .profile-form input {
           margin-top: 6px;
           padding: 10px;
-          border-radius: 8px;
-          border: 1px solid #ccc;
+          border-radius: 10px;
+          border: 1px solid #ddd;
+          transition: .2s;
+        }
+
+        .profile-form input:focus {
+          outline: none;
+          border-color: #f28c28;
+          box-shadow: 0 0 0 2px rgba(242,140,40,.2);
         }
 
         .profile-actions {
@@ -308,13 +367,18 @@ export default function Profile() {
           padding: 10px;
           border-radius: 999px;
           border: none;
-          font-weight: 800;
+          font-weight: bold;
           cursor: pointer;
+          transition: .2s;
         }
 
         .btn-primary {
           background: #f28c28;
           color: #fff;
+        }
+
+        .btn-primary:hover {
+          background: #e77a1d;
         }
 
         .btn-outline {
@@ -326,10 +390,21 @@ export default function Profile() {
           color: #fff;
         }
 
-        .error {
-          color: red;
-          text-align: center;
-          margin-bottom: 10px;
+        .alert {
+          padding: 10px;
+          border-radius: 10px;
+          margin-bottom: 15px;
+          font-size: 13px;
+        }
+
+        .alert.error {
+          background: #ffe5e5;
+          color: #d63031;
+        }
+
+        .alert.success {
+          background: #e6ffed;
+          color: #27ae60;
         }
       `}</style>
     </div>

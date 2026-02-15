@@ -8,8 +8,10 @@ import {
   crearUsuario,
   obtenerPerfil,
   actualizarPerfil,
-  subirFotoPerfil
+  subirFotoPerfil,
+  cambiarEmail // 👈 agrega esto
 } from '../controllers/usuario.controller.js';
+
 
 // 🔥 USAMOS EL MIDDLEWARE QUE YA EXISTE
 import { uploadPersonaImage } from '../middlewares/uploadPersona.middleware.js';
@@ -33,6 +35,12 @@ router.post('/', crearUsuario);
 /* =========================
    🔥 NUEVO – PERFIL USUARIO
 ========================= */
+router.put(
+  '/perfil/email',
+  authMiddleware,
+  cambiarEmail
+);
+
 
 // Obtener perfil del usuario logueado
 router.get(
