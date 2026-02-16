@@ -64,7 +64,12 @@ export default function CoctelDetail() {
   return (
     <div className="cd-wrap">
       {/* VOLVER */}
-      <button className="cd-back" onClick={() => navigate(-1)}>←</button>
+      <button
+        className="cd-back"
+        onClick={() => navigate(-1)}
+      >
+        ← Volver
+      </button>
 
       {/* NOMBRE */}
       <div className="cd-title">
@@ -137,17 +142,19 @@ export default function CoctelDetail() {
         }
 
         .cd-back {
-          position: fixed;
-          top: 70px;
-          left: 16px;
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
+          background: none;
           border: none;
-          background: #f6b37f;
-          font-size: 18px;
-          z-index: 10;
+          font-size: 14px;
+          font-weight: 800;
+          cursor: pointer;
+          margin: 16px;
+          color: #111;
         }
+
+        .cd-back:hover {
+          opacity: 0.7;
+        }
+
 
         .cd-title {
           margin: 16px;

@@ -11,7 +11,7 @@ export default function AdminBartenders() {
 
   const [form, setForm] = useState({
     nombre_publico: "",
-    especialidad: "",          // ✅ NUEVO
+    especialidad: "",
     descripcion: "",
     region: "",
     ciudad: "",
@@ -35,7 +35,7 @@ export default function AdminBartenders() {
       setPerfilPropio(data);
       setForm({
         nombre_publico: data.nombre_publico || "",
-        especialidad: data.especialidad || "", // ✅ NUEVO
+        especialidad: data.especialidad || "",
         descripcion: data.descripcion || "",
         region: data.region || "",
         ciudad: data.ciudad || "",
@@ -77,6 +77,9 @@ export default function AdminBartenders() {
         });
       }
 
+      const actualizado = await apiFetch("/bartenders/me");
+      setPerfilPropio(actualizado);
+
       navigate("/bartenders/me");
     } catch (err) {
       setError(err.message || "No se pudo guardar el perfil");
@@ -87,8 +90,16 @@ export default function AdminBartenders() {
 
   return (
     <div className="bartender-wrap">
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        className="back-btn"
+      >
+        ← Volver
+      </button>
+
       <h2>
-        {perfilPropio ? "Editar perfil bartender" : "Crear perfil bartender"}
+        {perfilPropio ? "Mi perfil bartender" : "Crear perfil bartender"}
       </h2>
 
       {error && <p className="bartender-error">{error}</p>}
@@ -102,7 +113,6 @@ export default function AdminBartenders() {
           required
         />
 
-        {/* ✅ ESPECIALIDAD */}
         <input
           name="especialidad"
           placeholder="Especialidad (ej: Coctelería clásica, Gin, Autor)"
@@ -169,7 +179,18 @@ export default function AdminBartenders() {
         </button>
       </form>
 
-      {/* ================= CSS ================= */}
+      {/* BOTÓN CREAR CÓCTEL */}
+        {perfilPropio && (
+          <button
+            type="button"
+            onClick={() => navigate("/mis-cocteles")}
+            className="crear-coctel-btn"
+          >
+            🍸 Crear / Gestionar mis cócteles
+          </button>
+        )}
+
+
       <style>{`
         .bartender-wrap {
           max-width: 420px;
@@ -234,10 +255,39 @@ export default function AdminBartenders() {
           box-shadow: 0 10px 24px rgba(242,140,40,0.45);
         }
 
-        .bartender-form button:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
+        .crear-coctel-btn {
+          width: 100%;
+          margin-top: 16px;
+          padding: 14px;
+          border-radius: 999px;
+          border: none;
+          background: linear-gradient(135deg, #111, #333);
+          color: #fff;
+          font-weight: 900;
+          font-size: 14px;
+          cursor: pointer;
+          box-shadow: 0 8px 20px rgba(0,0,0,0.3);
         }
+
+        .crear-coctel-btn:hover {
+          transform: translateY(-1px);
+          opacity: 0.95;
+        }
+
+        .back-btn {
+          background: none;
+          border: none;
+          font-size: 14px;
+          font-weight: 800;
+          cursor: pointer;
+          margin-bottom: 10px;
+          color: #111;
+        }
+
+        .back-btn:hover {
+          opacity: 0.7;
+        }
+
       `}</style>
     </div>
   );

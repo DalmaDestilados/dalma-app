@@ -5,8 +5,11 @@ import { apiFetch } from "../api";
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
 export default function AdminCocteles() {
-  const { idDestileria } = useParams();
+  const params = useParams();
   const navigate = useNavigate();
+
+  const idDestileria = params.idDestileria;
+  const isBartenderMode = !idDestileria;
 
   const [cocteles, setCocteles] = useState([]);
   const [ingredientes, setIngredientes] = useState([]);
@@ -30,24 +33,26 @@ export default function AdminCocteles() {
 
   async function fetchCocteles() {
     try {
-      const data = await apiFetch(`/cocteles/destileria/${idDestileria}`);
+      let data;
+
+      if (isBartenderMode) {
+        data = await apiFetch("/cocteles/me");
+      } else {
+        data = await apiFetch(`/cocteles/destileria/${idDestileria}`);
+      }
+
       setCocteles(data);
-    } catch {
+    } catch (err) {
+      console.error(err);
       setError("Error al cargar cócteles");
     }
   }
 
-  /* =========================
-     UTIL IMAGEN 🔥 FIX
-  ========================= */
   function getImageUrl(path) {
     if (!path) return null;
     return `${API_BASE}/${path.replace(/^\/+/, "")}`;
   }
 
-  /* =========================
-     FORM
-  ========================= */
   function handleChange(e) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -103,11 +108,8 @@ export default function AdminCocteles() {
     fetchCocteles();
   }
 
-  /* =========================
-     ✅ VALIDACIONES SEGURAS
-  ========================= */
   function validarFormulario() {
-    if (!form.nombre.trim()) return "El nombre del cóctel es obligatorio";
+    if (!form.nombre.trim()) return "El nombre es obligatorio";
     if (!form.destilado_principal.trim())
       return "El destilado principal es obligatorio";
 
@@ -126,9 +128,6 @@ export default function AdminCocteles() {
     return null;
   }
 
-  /* =========================
-     GUARDAR CÓCTEL
-  ========================= */
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
@@ -142,10 +141,9 @@ export default function AdminCocteles() {
     setLoading(true);
 
     try {
-      const payload = {
-        ...form,
-        id_destileria: idDestileria,
-      };
+      const payload = isBartenderMode
+        ? { ...form }
+        : { ...form, id_destileria: idDestileria };
 
       let coctelId;
 
@@ -200,7 +198,11 @@ export default function AdminCocteles() {
         ← Volver
       </button>
 
-      <h2>Cócteles de la destilería</h2>
+      <h2>
+        {isBartenderMode
+          ? "Mis cócteles"
+          : "Cócteles de la destilería"}
+      </h2>
 
       {error && <p className="error">{error}</p>}
 
@@ -248,7 +250,7 @@ export default function AdminCocteles() {
           + Agregar ingrediente
         </button>
 
-        <label>Imagen del cóctel</label>
+        <label>Imagen</label>
         <input
           type="file"
           accept="image/*"
@@ -272,7 +274,6 @@ export default function AdminCocteles() {
                 src={getImageUrl(c.imagen_url)}
                 alt={c.nombre}
                 className="product-img"
-                onError={(e) => (e.currentTarget.style.display = "none")}
               />
             )}
 
@@ -295,52 +296,74 @@ export default function AdminCocteles() {
       <style>{`
         .admin-wrap {
           max-width: 420px;
-          margin: auto;
-          padding: 20px 16px 90px;
+          margin: 0 auto;
+          padding: 20px 16px 100px;
         }
 
         .back {
           background: none;
           border: none;
-          margin-bottom: 10px;
           font-size: 14px;
+          margin-bottom: 10px;
+          cursor: pointer;
+          font-weight: 700;
         }
 
         h2 {
           text-align: center;
           color: #f28c28;
+          margin-bottom: 16px;
+          font-weight: 900;
+        }
+
+        .error {
+          color: #e74c3c;
+          text-align: center;
+          font-weight: 800;
+          margin-bottom: 12px;
+        }
+
+        .form {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          background: #fff;
+          padding: 20px;
+          border-radius: 22px;
+          box-shadow: 0 14px 30px rgba(0,0,0,0.15);
         }
 
         .form input,
         .form textarea {
-          width: 100%;
-          padding: 12px;
-          margin-bottom: 8px;
+          padding: 12px 14px;
           border-radius: 14px;
           border: 1px solid #ddd;
+          font-size: 14px;
         }
 
         .form button {
-          width: 100%;
           padding: 14px;
+          border-radius: 999px;
+          border: none;
           background: linear-gradient(135deg, #f28c28, #ff9f43);
           color: #111;
-          border: none;
-          border-radius: 999px;
           font-weight: 900;
-          margin-top: 10px;
+          cursor: pointer;
+          box-shadow: 0 10px 24px rgba(242,140,40,0.45);
         }
 
         .list {
-          margin-top: 20px;
+          margin-top: 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
         }
 
         .card {
           background: #fff;
           padding: 14px;
           border-radius: 18px;
-          margin-bottom: 14px;
-          box-shadow: 0 10px 24px rgba(0,0,0,.12);
+          box-shadow: 0 10px 24px rgba(0,0,0,0.12);
         }
 
         .product-img {
@@ -354,24 +377,43 @@ export default function AdminCocteles() {
         .actions {
           display: flex;
           justify-content: space-between;
-          margin-top: 10px;
+          margin-top: 12px;
         }
 
         .actions button {
+          padding: 8px 14px;
+          border-radius: 999px;
           border: none;
-          padding: 6px 12px;
-          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 800;
+          cursor: pointer;
+          background: rgba(0,0,0,0.06);
         }
 
         .danger {
           background: #e74c3c;
-          color: white;
+          color: #fff;
         }
 
-        .error {
-          color: red;
-          text-align: center;
+        .ingrediente-row {
+        display: flex;
+        gap: 8px;
+        width: 50%;
+      }
+
+      .ingrediente-row input {
+        flex: 1;
+        min-width: 0;
+        box-sizing: border-box;
+      }
+
+      
+      @media (max-width: 420px) {
+        .ingrediente-row {
+          flex-direction: column;
         }
+      }
+
       `}</style>
     </div>
   );

@@ -188,6 +188,8 @@ export default function App() {
             element={<BartenderDetail />}
           />
 
+
+
           {/* ADMIN */}
           <Route
             path="/admin/bartenders"
@@ -204,6 +206,15 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <AdminBartenders /> {/* este es el CRUD del bartender */}
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/mis-cocteles"
+            element={
+              <ProtectedRoute>
+                <AdminCocteles />
               </ProtectedRoute>
             }
           />

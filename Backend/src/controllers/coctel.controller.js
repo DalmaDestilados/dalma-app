@@ -6,90 +6,78 @@ const ROL_USUARIO = 1;
 const ROL_BARTENDER = 2;
 const ROL_ADMIN = 3;
 
-const LIMITES = {
-  [ROL_USUARIO]: 1,
-  DESTILERIA: 5,
-  [ROL_BARTENDER]: Infinity,
-  [ROL_ADMIN]: Infinity
-};
-
-// ======================
-// CREAR CÓCTEL
-// ======================
+/* ======================
+   CREAR CÓCTEL
+====================== */
 export const crearCoctel = async (req, res) => {
   try {
-    const {
-      nombre,
-      descripcion,
-      destilado_principal
-    } = req.body;
+    const { nombre, descripcion, destilado_principal } = req.body;
 
-    const {
-      rol,
-      id,
-      id_destileria,
-      id_bartender
-    } = req.usuario;
+    const { id_usuario, id_rol } = req.user;
 
-    // ✅ FIX: NO validar ingredientes aquí
     if (!nombre || !destilado_principal) {
       return res.status(400).json({
         error: 'Nombre y destilado principal son obligatorios'
       });
     }
 
-    let total = 0;
-
-    // 🔥 FIX REAL: activo = 1
-    const data = { 
-      nombre, 
-      descripcion, 
+    const data = {
+      nombre,
+      descripcion,
       destilado_principal,
       activo: 1
     };
 
-    if (rol === ROL_USUARIO) {
-      total = await Coctel.contarPorUsuario(id);
-      data.id_usuario = id;
-    }
+    // 👤 BARTENDER (ROL 2)
+    if (id_rol === ROL_BARTENDER) {
+      const [rows] = await pool.query(
+        "SELECT id_bartender FROM bartenders WHERE id_usuario = ?",
+        [id_usuario]
+      );
 
-    if (rol === ROL_BARTENDER) {
-      data.id_bartender = id_bartender;
-    }
+  if (!rows.length) {
+    return res.status(400).json({
+      error: "El usuario no tiene perfil de bartender"
+    });
+  }
 
-    if (rol === ROL_ADMIN) {
-      if (req.body.id_destileria) {
-        data.id_destileria = req.body.id_destileria;
-        total = await Coctel.contarPorDestileria(req.body.id_destileria);
-      } else {
+  data.id_bartender = rows[0].id_bartender;
+}
+
+    // 👑 ADMIN (ROL 3)
+    if (id_rol === ROL_ADMIN) {
+      if (!req.body.id_destileria) {
         return res.status(400).json({
-          error: 'ADMIN debe indicar id_destileria al crear un cóctel'
+          error: 'ADMIN debe indicar id_destileria'
         });
       }
+
+      data.id_destileria = req.body.id_destileria;
     }
 
-    if (total >= (LIMITES[rol] ?? LIMITES.DESTILERIA)) {
-      return res.status(403).json({
-        error: 'Límite de cócteles alcanzado'
-      });
+    // 👤 USUARIO NORMAL (ROL 1)
+    if (id_rol === ROL_USUARIO) {
+      data.id_usuario = id_usuario;
     }
 
     const id_coctel = await Coctel.crear(data);
 
-    res.status(201).json({
+    return res.status(201).json({
       message: 'Cóctel creado correctamente',
       id_coctel
     });
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Error al crear cóctel' });
+    return res.status(500).json({ error: 'Error al crear cóctel' });
   }
 };
 
-// ======================
-// OBTENER CÓCTELES PÚBLICOS
-// ======================
+
+
+/* ======================
+   OBTENER PÚBLICOS
+====================== */
 export const obtenerCoctelesPublicos = async (req, res) => {
   try {
     const [rows] = await pool.query(`
@@ -114,16 +102,17 @@ export const obtenerCoctelesPublicos = async (req, res) => {
       ORDER BY c.created_at DESC
     `);
 
-    res.json(rows);
+    return res.json(rows);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error al obtener cócteles' });
+    console.error('ERROR obtenerCoctelesPublicos:', error);
+    return res.status(500).json({ error: 'Error al obtener cócteles' });
   }
 };
 
-// ======================
-// PERFIL CÓCTEL
-// ======================
+
+/* ======================
+   PERFIL CÓCTEL
+====================== */
 export const obtenerCoctelPorId = async (req, res) => {
   try {
     const coctel = await Coctel.obtenerPublicoPorId(req.params.id);
@@ -136,77 +125,89 @@ export const obtenerCoctelPorId = async (req, res) => {
       coctel.id_coctel
     );
 
-    res.json({ ...coctel, ingredientes });
+    return res.json({ ...coctel, ingredientes });
 
-  } catch {
-    res.status(500).json({ error: 'Error al obtener cóctel' });
+  } catch (error) {
+    console.error('ERROR obtenerCoctelPorId:', error);
+    return res.status(500).json({ error: 'Error al obtener cóctel' });
   }
 };
 
-// ======================
-// ACTUALIZAR
-// ======================
+
+/* ======================
+   ACTUALIZAR
+====================== */
 export const actualizarCoctel = async (req, res) => {
   try {
-    const { rol, id } = req.usuario;
+    const { id_usuario, id_rol } = req.user;
     const coctel = await Coctel.obtenerPorId(req.params.id);
 
     if (!coctel) {
-      return res.status(404).json({ error: 'Cóctel no encontrado' });
+      return res.status(404).json({ error: "Cóctel no encontrado" });
     }
 
-    if (rol !== ROL_ADMIN && coctel.id_usuario !== id) {
-      return res.status(403).json({ error: 'No autorizado' });
+    // 🔥 ADMIN puede editar todo
+    if (id_rol === ROL_ADMIN) {
+      await Coctel.actualizar(req.params.id, req.body);
+      return res.json({ message: "Cóctel actualizado correctamente" });
     }
 
-    await Coctel.actualizar(req.params.id, req.body);
+    // 🔥 BARTENDER
+    if (id_rol === ROL_BARTENDER) {
+      const [rows] = await pool.query(
+        "SELECT id_bartender FROM bartenders WHERE id_usuario = ?",
+        [id_usuario]
+      );
 
-    if (req.body.ingredientes) {
-      await CoctelIngrediente.eliminarPorCoctel(req.params.id);
-      for (const ing of req.body.ingredientes) {
-        await CoctelIngrediente.agregar(
-          req.params.id,
-          ing.ingrediente,
-          ing.cantidad
-        );
+      if (!rows.length) {
+        return res.status(403).json({ error: "No autorizado" });
       }
+
+      const id_bartender = rows[0].id_bartender;
+
+      if (coctel.id_bartender !== id_bartender) {
+        return res.status(403).json({ error: "No autorizado" });
+      }
+
+      await Coctel.actualizar(req.params.id, req.body);
+
+      return res.json({ message: "Cóctel actualizado correctamente" });
     }
 
-    res.json({ message: 'Cóctel actualizado correctamente' });
+    return res.status(403).json({ error: "No autorizado" });
 
-  } catch {
-    res.status(500).json({ error: 'Error al actualizar cóctel' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al actualizar cóctel" });
   }
 };
 
-// ======================
-// ELIMINAR (DESACTIVAR)
-// ======================
+
+
+/* ======================
+   ELIMINAR (DESACTIVAR)
+====================== */
 export const eliminarCoctel = async (req, res) => {
   try {
     await Coctel.desactivar(req.params.id);
-    res.json({ message: 'Cóctel eliminado correctamente' });
-  } catch {
-    res.status(500).json({ error: 'Error al eliminar cóctel' });
+    return res.json({ message: 'Cóctel eliminado correctamente' });
+  } catch (error) {
+    console.error('ERROR eliminarCoctel:', error);
+    return res.status(500).json({ error: 'Error al eliminar cóctel' });
   }
 };
 
-// ===================================================
-// 🔥 NUEVO: CÓCTEL RECOMENDADO SEGÚN PRODUCTO
-// ===================================================
+
+/* ======================
+   RECOMENDADO PRODUCTO
+====================== */
 export const obtenerCoctelRecomendadoPorProducto = async (req, res) => {
   try {
     const { id_producto } = req.params;
-
     const coctel = await Coctel.obtenerRecomendadoPorProducto(id_producto);
-
-    if (!coctel) {
-      return res.json(null);
-    }
-
-    res.json(coctel);
+    return res.json(coctel || null);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error al obtener cóctel recomendado' });
+    console.error('ERROR recomendado:', error);
+    return res.status(500).json({ error: 'Error al obtener cóctel recomendado' });
   }
 };
