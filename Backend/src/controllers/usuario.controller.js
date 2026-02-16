@@ -115,6 +115,55 @@ export const actualizarPerfil = async (req, res) => {
     res.status(500).json({ error: 'Error al actualizar perfil' });
   }
 };
+// Cambiar correo con validación de contraseña
+export const cambiarEmail = async (req, res) => {
+  try {
+    const id_usuario = req.user.id_usuario;
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email y contraseña requeridos" });
+    }
+
+    // Buscar usuario actual con contraseña
+    const [rows] = await pool.query(
+      "SELECT password FROM usuarios WHERE id_usuario = ?",
+      [id_usuario]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    const validPassword = await bcrypt.compare(password, rows[0].password);
+
+    if (!validPassword) {
+      return res.status(401).json({ error: "Contraseña incorrecta" });
+    }
+
+    // Verificar si el nuevo email ya existe
+    const [existing] = await pool.query(
+      "SELECT id_usuario FROM usuarios WHERE email = ?",
+      [email]
+    );
+
+    if (existing.length) {
+      return res.status(409).json({ error: "El correo ya está en uso" });
+    }
+
+    await pool.query(
+      "UPDATE usuarios SET email = ? WHERE id_usuario = ?",
+      [email, id_usuario]
+    );
+
+    res.json({ message: "Correo actualizado correctamente" });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al actualizar correo" });
+  }
+};
+
 
 // Subir / cambiar foto de perfil
 export const subirFotoPerfil = async (req, res) => {
@@ -154,4 +203,5 @@ export const subirFotoPerfil = async (req, res) => {
     console.error(error);
     res.status(500).json({ error: 'Error al subir foto de perfil' });
   }
+
 };

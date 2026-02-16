@@ -10,6 +10,9 @@ export const useAuth = () => useContext(AuthContext);
 const API_AUTH = "http://localhost:3001/api/auth";
 const API_PASSWORD = "http://localhost:3001/api/password";
 
+/* 🔥 NUEVO */
+const API_USUARIOS = "http://localhost:3001/api/usuarios";
+
 /* =========================
    LOCKS
 ========================= */
@@ -37,6 +40,24 @@ export function AuthProvider({ children }) {
     return config;
   });
 
+  /* 🔥 NUEVO: cargar perfil completo */
+  async function cargarPerfilCompleto() {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return null;
+
+      const res = await axios.get(`${API_USUARIOS}/perfil`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      return res.data;
+    } catch {
+      return null;
+    }
+  }
+
   /* =========================
      GET ME
   ========================= */
@@ -57,7 +78,14 @@ export function AuthProvider({ children }) {
       const usuario = res.data || null;
 
       if (usuario) {
-        setUser(usuario);
+        /* 🔥 NUEVO: ahora trae perfil completo */
+        const perfil = await cargarPerfilCompleto();
+
+        const usuarioFinal = perfil
+          ? { ...usuario, ...perfil }
+          : usuario;
+
+        setUser(usuarioFinal);
         setIsAuthed(true);
       }
 
@@ -98,7 +126,14 @@ export function AuthProvider({ children }) {
       }
 
       if (user) {
-        setUser(user);
+        /* 🔥 NUEVO: cargar perfil completo tras login */
+        const perfil = await cargarPerfilCompleto();
+
+        const usuarioFinal = perfil
+          ? { ...user, ...perfil }
+          : user;
+
+        setUser(usuarioFinal);
         setIsAuthed(true);
       }
 
@@ -208,7 +243,7 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider
       value={{
         user,
-        setUser, // ✅ agregado para Profile.jsx
+        setUser,
         usuarios: user,
         isAuthed,
         booting,
