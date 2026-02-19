@@ -2,27 +2,30 @@ import Deseos from '../models/deseos.model.js';
 
 export const agregarDeseo = async (req, res) => {
   try {
-    await Deseos.agregar(req.usuario.id, req.params.id_producto);
+    await Deseos.agregar(req.user.id_usuario, req.params.id_producto);
     res.json({ message: 'Producto agregado a lista de deseos' });
-  } catch {
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Error al agregar a deseos' });
   }
 };
 
 export const quitarDeseo = async (req, res) => {
   try {
-    await Deseos.quitar(req.usuario.id, req.params.id_producto);
+    await Deseos.quitar(req.user.id_usuario, req.params.id_producto);
     res.json({ message: 'Producto eliminado de lista de deseos' });
-  } catch {
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Error al quitar de deseos' });
   }
 };
 
 export const obtenerDeseos = async (req, res) => {
   try {
-    const deseos = await Deseos.obtenerPorUsuario(req.usuario.id);
+    const deseos = await Deseos.obtenerPorUsuario(req.user.id_usuario);
     res.json(deseos);
-  } catch {
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Error al obtener lista de deseos' });
   }
 };

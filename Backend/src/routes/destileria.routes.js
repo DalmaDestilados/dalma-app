@@ -37,6 +37,41 @@ function normalizeUploadPath(filePath) {
 
 router.get("/", obtenerDestileriasPublicas);
 router.get("/public", obtenerDestileriasPublicas);
+
+/* =====================================================
+   🔥 Devuelve maestros reales con su destilería
+   (DEBE IR ANTES DE /public/:id)
+===================================================== */
+router.get("/public/masters", async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT
+        d.id_destileria,
+        d.nombre_comercial,
+        d.logo_url,
+        d.ciudad,
+        d.pais,
+        d.persona_nombre AS nombre,
+        d.persona_descripcion AS descripcion,
+        d.persona_url AS foto_url
+      FROM destilerias d
+      WHERE d.activo = 1
+        AND d.persona_nombre IS NOT NULL
+        AND d.persona_url IS NOT NULL
+      ORDER BY d.created_at DESC
+    `);
+
+    res.json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Error al obtener maestros",
+      error: error.message
+    });
+  }
+});
+
+/* 👇 ESTA VA DESPUÉS para evitar conflicto */
 router.get("/public/:id", obtenerDestileriaPublicaPorId);
 
 /* =========================
@@ -97,39 +132,6 @@ router.get("/:id/perfil", async (req, res) => {
   }
 });
 
-/* =====================================================
-  
-   Devuelve maestros reales con su destilería
-===================================================== */
-router.get("/public/masters", async (req, res) => {
-  try {
-    const [rows] = await pool.query(`
-      SELECT
-        d.id_destileria,
-        d.nombre_comercial,
-        d.logo_url,
-        d.ciudad,
-        d.pais,
-        d.persona_nombre AS nombre,
-        d.persona_descripcion AS descripcion,
-        d.persona_url AS foto_url
-      FROM destilerias d
-      WHERE d.activo = 1
-        AND d.persona_nombre IS NOT NULL
-        AND d.persona_url IS NOT NULL
-      ORDER BY d.created_at DESC
-    `);
-
-    res.json(rows);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      message: "Error al obtener maestros",
-      error: error.message
-    });
-  }
-});
-
 /* =========================
     RUTAS ADMIN
 ========================= */
@@ -140,9 +142,7 @@ router.use(authMiddleware, verificarRol(ROL_ADMIN));
 router.get("/admin/list", obtenerDestilerias);
 router.get("/admin/:id", obtenerDestileriaPorId);
 
-/*  CREAR DESTILERÍA (SIN IMAGEN) */
 router.post("/", crearDestileria);
-
 router.put("/:id", actualizarDestileria);
 router.delete("/:id", eliminarDestileria);
 router.patch("/:id/mostrar", mostrarDestileria);
@@ -231,7 +231,7 @@ router.post(
 );
 
 /* =========================
-   🖼 GALERÍA (CARRUSEL)
+   🖼 GALERÍA
 ========================= */
 
 router.post(

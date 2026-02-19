@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../AuthContext.jsx";
 import { apiFetch } from "../api";
+import { useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
 export default function Profile() {
   const { user, logout, setUser } = useAuth();
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -19,6 +21,11 @@ export default function Profile() {
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  /* NUEVO */
+  const [view, setView] = useState(null);
+  const [favoritos, setFavoritos] = useState([]);
+  const [deseos, setDeseos] = useState([]);
 
   /* =========================
      CARGAR PERFIL
@@ -50,15 +57,36 @@ export default function Profile() {
   }, [user?.id_usuario]);
 
   /* =========================
+     FAVORITOS / DESEOS
+  ========================= */
+
+  async function loadFavoritos() {
+    try {
+      const data = await apiFetch("/favoritos");
+      setFavoritos(data);
+      setView("favoritos");
+    } catch {
+      setFavoritos([]);
+    }
+  }
+
+  async function loadDeseos() {
+    try {
+      const data = await apiFetch("/deseos");
+      setDeseos(data);
+      setView("deseos");
+    } catch {
+      setDeseos([]);
+    }
+  }
+
+  /* =========================
      VALIDAR EMAIL
   ========================= */
   function validateEmail(mail) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail);
   }
 
-  /* =========================
-     FOTO PREVIEW
-  ========================= */
   function handleImageChange(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -67,9 +95,6 @@ export default function Profile() {
     setPreview(URL.createObjectURL(file));
   }
 
-  /* =========================
-     GUARDAR PERFIL
-  ========================= */
   async function handleSave(e) {
     e.preventDefault();
     setLoading(true);
@@ -85,13 +110,11 @@ export default function Profile() {
         throw new Error("Correo electrónico inválido");
       }
 
-      /* 1️⃣ Actualizar nombre */
       await apiFetch("/usuarios/perfil", {
         method: "PUT",
         body: JSON.stringify({ nombre: name }),
       });
 
-      /* 2️⃣ Cambiar correo si es distinto */
       if (email !== user.email) {
         if (!passwordConfirm) {
           throw new Error("Debes confirmar tu contraseña");
@@ -108,7 +131,6 @@ export default function Profile() {
 
       let fotoPerfil = user.foto_perfil;
 
-      /* 3️⃣ Subir imagen */
       if (photo) {
         const fd = new FormData();
         fd.append("imagen", photo);
@@ -121,7 +143,6 @@ export default function Profile() {
         fotoPerfil = imgRes.foto_perfil;
       }
 
-      /* 4️⃣ Actualizar contexto */
       setUser({
         ...user,
         nombre: name,
@@ -145,7 +166,10 @@ export default function Profile() {
 
   return (
     <div className="profile-page">
+
       <div className="profile-card">
+
+        {/* HEADER */}
         <div className="profile-header">
           <div className="profile-avatar">
             {preview ? (
@@ -161,65 +185,8 @@ export default function Profile() {
         {error && <div className="alert error">{error}</div>}
         {success && <div className="alert success">{success}</div>}
 
-        {editing ? (
-          <form onSubmit={handleSave} className="profile-form">
-
-            <label>
-              Nombre público
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </label>
-
-            <label>
-              Correo electrónico
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </label>
-
-            {email !== user.email && (
-              <label>
-                Confirmar contraseña
-                <input
-                  type="password"
-                  value={passwordConfirm}
-                  onChange={(e) => setPasswordConfirm(e.target.value)}
-                />
-              </label>
-            )}
-
-            <label className="file-label">
-              Cambiar foto
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-              />
-            </label>
-
-            <div className="profile-actions">
-              <button
-                type="button"
-                className="btn-outline"
-                onClick={() => setEditing(false)}
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="btn-primary"
-                disabled={loading}
-              >
-                {loading ? "Guardando..." : "Guardar cambios"}
-              </button>
-            </div>
-          </form>
-        ) : (
+        {/* INFO NORMAL */}
+        {!editing && (
           <>
             <div className="profile-info">
               <div className="info-row">
@@ -241,172 +208,224 @@ export default function Profile() {
             </div>
 
             <div className="profile-actions">
-              <button
-                className="btn-outline"
-                onClick={() => setEditing(true)}
-              >
+              <button className="btn-outline" onClick={() => setEditing(true)}>
                 Editar perfil
               </button>
               <button className="btn-danger" onClick={logout}>
                 Cerrar sesión
               </button>
             </div>
+
+            <div className="profile-links">
+              <button onClick={loadFavoritos}>
+                ❤️ Mis Favoritos
+              </button>
+              <button onClick={loadDeseos}>
+                ⭐ Lista de Deseos
+              </button>
+            </div>
           </>
         )}
+
+        {/* PANEL LISTA */}
+        {view && (
+          <div className="list-panel">
+            <div className="panel-header">
+              <h3>
+                {view === "favoritos"
+                  ? "❤️ Mis Favoritos"
+                  : "⭐ Lista de Deseos"}
+              </h3>
+              <button onClick={() => setView(null)}>✕</button>
+            </div>
+
+            <div className="panel-grid">
+              {(view === "favoritos" ? favoritos : deseos).length === 0 && (
+                <p>No hay productos guardados.</p>
+              )}
+
+              {(view === "favoritos" ? favoritos : deseos).map((p) => (
+                <div
+                  key={p.id_producto}
+                  className="panel-card"
+                  onClick={() =>
+                    navigate(`/productos/${p.id_producto}`)
+                  }
+                >
+                  <img
+                    src={`${API_BASE}/${p.imagen_url}`}
+                    alt={p.nombre}
+                  />
+                  <h4>{p.nombre}</h4>
+                  <span>
+                    ${Number(p.precio).toLocaleString("es-CL")}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
 
-      <style>{`
-        .profile-page {
-          min-height: 100vh;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          background: linear-gradient(135deg, #f28c28, #ffb066);
-          padding: 20px;
-        }
+<style>{`
+.profile-page {
+  min-height: 100vh;
+  padding: 20px 20px 120px 20px; /* CORRIGE LINEA BLANCA */
+  background: linear-gradient(135deg, #f28c28, #ffb066);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
 
-        .profile-card {
-          width: 100%;
-          max-width: 420px;
-          background: #fff;
-          border-radius: 24px;
-          padding: 28px;
-          box-shadow: 0 25px 50px rgba(0,0,0,.2);
-          animation: fadeIn .4s ease;
-        }
+.profile-card {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: 24px;
+  padding: 28px;
+  box-shadow: 0 25px 50px rgba(0,0,0,.2);
+}
 
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
+.profile-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
 
-        .profile-header {
-          text-align: center;
-          margin-bottom: 20px;
-        }
+.profile-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  margin: 0 auto 15px;
+  background: linear-gradient(135deg, #f28c28, #ffb066);
+  color: #fff;
+  font-size: 40px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
 
-        .profile-avatar {
-          width: 100px;
-          height: 100px;
-          border-radius: 50%;
-          margin: 0 auto 15px;
-          background: linear-gradient(135deg, #f28c28, #ffb066);
-          color: #fff;
-          font-size: 40px;
-          font-weight: bold;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          overflow: hidden;
-          border: 4px solid #fff;
-          box-shadow: 0 10px 25px rgba(0,0,0,.2);
-        }
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
-        .profile-avatar img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
+.profile-subtitle {
+  font-size: 13px;
+  color: #666;
+}
 
-        .profile-subtitle {
-          font-size: 13px;
-          color: #666;
-        }
+.profile-info {
+  margin-bottom: 20px;
+}
 
-        .profile-info {
-          margin-bottom: 20px;
-        }
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
 
-        .info-row {
-          display: flex;
-          justify-content: space-between;
-          padding: 12px;
-          background: #f9f9f9;
-          border-radius: 12px;
-          margin-bottom: 10px;
-        }
+.badge {
+  background: #fde9d8;
+  color: #f28c28;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: bold;
+}
 
-        .badge {
-          background: #fde9d8;
-          color: #f28c28;
-          padding: 5px 12px;
-          border-radius: 999px;
-          font-size: 12px;
-          font-weight: bold;
-        }
+.profile-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
 
-        .profile-form label {
-          display: flex;
-          flex-direction: column;
-          font-size: 13px;
-          margin-bottom: 14px;
-        }
+.profile-actions button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 999px;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+}
 
-        .profile-form input {
-          margin-top: 6px;
-          padding: 10px;
-          border-radius: 10px;
-          border: 1px solid #ddd;
-          transition: .2s;
-        }
+.btn-outline { background: #eee; }
+.btn-danger { background: #e74c3c; color: #fff; }
 
-        .profile-form input:focus {
-          outline: none;
-          border-color: #f28c28;
-          box-shadow: 0 0 0 2px rgba(242,140,40,.2);
-        }
+.profile-links {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
 
-        .profile-actions {
-          display: flex;
-          gap: 10px;
-          margin-top: 16px;
-        }
+.profile-links button {
+  padding: 10px;
+  border-radius: 14px;
+  border: none;
+  background: #fde9d8;
+  cursor: pointer;
+  font-weight: 600;
+}
 
-        .profile-actions button {
-          flex: 1;
-          padding: 10px;
-          border-radius: 999px;
-          border: none;
-          font-weight: bold;
-          cursor: pointer;
-          transition: .2s;
-        }
+.list-panel {
+  margin-top: 25px;
+  border-top: 1px solid #eee;
+  padding-top: 20px;
+}
 
-        .btn-primary {
-          background: #f28c28;
-          color: #fff;
-        }
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-        .btn-primary:hover {
-          background: #e77a1d;
-        }
+.panel-grid {
+  margin-top: 15px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
 
-        .btn-outline {
-          background: #eee;
-        }
+.panel-card {
+  background: #fff7ef;
+  padding: 10px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: .2s;
+  text-align: center;
+}
 
-        .btn-danger {
-          background: #e74c3c;
-          color: #fff;
-        }
+.panel-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px rgba(0,0,0,.1);
+}
 
-        .alert {
-          padding: 10px;
-          border-radius: 10px;
-          margin-bottom: 15px;
-          font-size: 13px;
-        }
+.panel-card img {
+  width: 100%;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 10px;
+}
 
-        .alert.error {
-          background: #ffe5e5;
-          color: #d63031;
-        }
+.panel-card h4 {
+  font-size: 13px;
+  margin: 8px 0 4px;
+}
 
-        .alert.success {
-          background: #e6ffed;
-          color: #27ae60;
-        }
-      `}</style>
+.panel-card span {
+  font-weight: bold;
+  font-size: 13px;
+}
+
+`}</style>
+
     </div>
   );
 }
