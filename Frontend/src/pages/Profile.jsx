@@ -185,6 +185,64 @@ export default function Profile() {
         {error && <div className="alert error">{error}</div>}
         {success && <div className="alert success">{success}</div>}
 
+
+            {/* EDITAR PERFIL */}
+{editing && (
+  <form onSubmit={handleSave} className="profile-edit-form">
+    <div className="edit-avatar">
+      <label htmlFor="photo">
+        {preview ? (
+          <img src={preview} alt="preview" />
+        ) : (
+          <div className="avatar-placeholder">{user.email.charAt(0).toUpperCase()}</div>
+        )}
+      </label>
+      <input
+        type="file"
+        id="photo"
+        accept="image/*"
+        onChange={(e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          setPhoto(file);
+          setPreview(URL.createObjectURL(file));
+        }}
+        style={{ display: "none" }}
+      />
+    </div>
+
+    <input
+      type="text"
+      value={name}
+      onChange={(e) => setName(e.target.value)}
+      placeholder="Nombre"
+      required
+    />
+
+    {error && <div className="alert error">{error}</div>}
+    {success && <div className="alert success">{success}</div>}
+
+    <div className="edit-actions">
+      <button type="submit" disabled={loading}>
+        {loading ? "Guardando..." : "Guardar"}
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          setEditing(false);
+          setName(user.nombre);
+          setPreview(user.foto_perfil ? `${API_BASE}/${user.foto_perfil}` : null);
+          setPhoto(null);
+          setError("");
+          setSuccess("");
+        }}
+      >
+        Cancelar
+      </button>
+    </div>
+  </form>
+)}
+ 
         {/* INFO NORMAL */}
         {!editing && (
           <>
@@ -422,6 +480,117 @@ export default function Profile() {
 .panel-card span {
   font-weight: bold;
   font-size: 13px;
+}
+
+/* =========================
+   PERFIL - FORMULARIO DE EDICIÓN
+========================= */
+.profile-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.profile-edit-form .edit-avatar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+  cursor: pointer;
+  position: relative;
+}
+
+.profile-edit-form .edit-avatar img {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #f28c28;
+  transition: transform 0.2s ease;
+}
+
+.profile-edit-form .edit-avatar img:hover {
+  transform: scale(1.05);
+}
+
+.profile-edit-form .avatar-placeholder {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f28c28, #ffb066);
+  color: #fff;
+  font-size: 40px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-edit-form input[type="text"] {
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  outline: none;
+  transition: border 0.2s ease;
+}
+
+.profile-edit-form input[type="text"]:focus {
+  border-color: #f28c28;
+}
+
+.profile-edit-form .edit-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.profile-edit-form .edit-actions button {
+  flex: 1;
+  padding: 12px;
+  border-radius: 999px;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.profile-edit-form .edit-actions button[type="submit"] {
+  background: linear-gradient(135deg, #f28c28, #ff9f43);
+  color: #111;
+  box-shadow: 0 8px 20px rgba(242, 140, 40, 0.35);
+}
+
+.profile-edit-form .edit-actions button[type="submit"]:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
+.profile-edit-form .edit-actions button[type="button"] {
+  background: #eee;
+  color: #111;
+}
+
+.profile-edit-form .edit-actions button[type="button"]:hover {
+  background: #ddd;
+}
+
+.profile-edit-form .alert {
+  padding: 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.profile-edit-form .alert.error {
+  background: #fce4e4;
+  color: #e74c3c;
+}
+
+.profile-edit-form .alert.success {
+  background: #e9f7ef;
+  color: #27ae60;
 }
 
 `}</style>

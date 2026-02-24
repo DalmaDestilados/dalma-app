@@ -85,14 +85,18 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* HOME */}
-          <Route
-            path="/home"
-            element={
-              <ProtectedRoute>
-                <Home searchTerm={searchTerm} category={category} />
-              </ProtectedRoute>
-            }
-          />
+         <Route
+  path="/home"
+  element={
+    <ProtectedRoute>
+      <Home
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        category={category}
+      />
+    </ProtectedRoute>
+  }
+/>
 
           {/* SEARCH / CART */}
           <Route
@@ -231,6 +235,15 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+
+          <Route
+  path="/admin/destilerias/:idDestileria/productos"
+  element={
+    <ProtectedRoute>
+      <AdminProductos />
+    </ProtectedRoute>
+  }
+/>
 
           <Route
             path="/admin/productos"

@@ -244,6 +244,99 @@ export default function ProductDetail() {
         </button>
       </div>
 
+      {/* =========================
+   DESCRIPCIÓN
+========================= */}
+<div className="sku-section">
+  <h3>Descripción</h3>
+  <p style={{ marginTop: 8 }}>
+    {product.descripcion || "Sin descripción disponible."}
+  </p>
+</div>
+
+{/* =========================
+   PERFIL DE CATA
+========================= */}
+{/* =========================
+   PERFIL DE CATA RADAR
+========================= */}
+<div className="sku-section">
+  <h3>Perfil de Cata</h3>
+
+  <div className="cata-radar">
+    <div
+      className="cata-shape"
+      style={{
+        clipPath: `polygon(
+          50% ${50 - cata.aromas * 8}%,
+          ${50 + cata.dulzor * 8}% 50%,
+          50% ${50 + cata.cuerpo * 8}%,
+          ${50 - cata.persistencia * 8}% 50%
+        )`
+      }}
+    />
+
+    <div className="cata-label top">Aromas</div>
+    <div className="cata-label right">Dulzor</div>
+    <div className="cata-label bottom">Cuerpo</div>
+    <div className="cata-label left">Persistencia</div>
+  </div>
+</div>
+{/* =========================
+   CÓCTEL RECOMENDADO PRO
+========================= */}
+{coctelRec && (
+  <div className="sku-section">
+    <h3>Recomendado para preparar</h3>
+
+    <div
+      className="coctel-card"
+      onClick={() => navigate(`/cocteles/${coctelRec.id_coctel}`)}
+    >
+      <img
+        src={
+          coctelRec.imagen_url
+            ? `${API_BASE}/${coctelRec.imagen_url}`
+            : coctelImg
+        }
+        alt={coctelRec.nombre}
+        className="coctel-img"
+      />
+
+      <div className="coctel-info">
+        <h4>{coctelRec.nombre}</h4>
+
+        {coctelRec.descripcion && (
+          <p className="coctel-desc">{coctelRec.descripcion}</p>
+        )}
+
+        {/* INGREDIENTES */}
+{coctelRec.ingredientes && (
+  <div className="coctel-block">
+    <strong>Ingredientes:</strong>
+    <ul>
+      {Array.isArray(coctelRec.ingredientes) &&
+        coctelRec.ingredientes.map((ing, i) => (
+          <li key={i}>
+            {ing.cantidad} {ing.ingrediente}
+          </li>
+        ))}
+    </ul>
+  </div>
+)}
+        
+        {/* PREPARACIÓN */}
+        {coctelRec.preparacion && (
+          <div className="coctel-block">
+            <strong>Preparación:</strong>
+            <p>{coctelRec.preparacion}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+)}
+
 <style>{`
 
 /* =========================
@@ -457,6 +550,145 @@ export default function ProductDetail() {
   .sku-actions {
     margin-left: 50%;
   }
+}
+
+/* =========================
+   RUEDA DE CATA
+========================= */
+
+.cata-radar {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  margin: 25px auto;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 40%, #f7f7f7 100%);
+  box-shadow: inset 0 0 0 2px #eee;
+}
+
+/* líneas guía */
+
+.cata-radar::before,
+.cata-radar::after {
+  content: "";
+  position: absolute;
+  background: #eee;
+}
+
+.cata-radar::before {
+  width: 2px;
+  height: 100%;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+}
+
+.cata-radar::after {
+  height: 2px;
+  width: 100%;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+}
+
+/* forma dinámica */
+
+.cata-shape {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: rgba(242, 140, 40, 0.35);
+  border: 2px solid #f28c28;
+  border-radius: 50%;
+  transition: 0.4s ease;
+}
+
+/* etiquetas */
+
+.cata-label {
+  position: absolute;
+  font-size: 13px;
+  font-weight: 700;
+  color: #444;
+}
+
+.cata-label.top {
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.cata-label.bottom {
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.cata-label.left {
+  left: -85px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.cata-label.right {
+  right: -85px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* =========================
+   CÓCTEL RECOMENDADO PRO
+========================= */
+
+.coctel-card {
+  margin-top: 14px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.15);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.coctel-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 32px rgba(0,0,0,0.22);
+}
+
+.coctel-img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.coctel-info {
+  padding: 14px;
+}
+
+.coctel-info h4 {
+  margin: 0 0 6px;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.coctel-desc {
+  font-size: 13px;
+  opacity: 0.75;
+  margin-bottom: 10px;
+}
+
+.coctel-block {
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.coctel-block ul {
+  padding-left: 18px;
+  margin: 6px 0;
+}
+
+.coctel-block li {
+  margin-bottom: 3px;
 }
 
 `}</style>

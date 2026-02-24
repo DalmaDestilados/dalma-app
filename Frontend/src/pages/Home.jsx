@@ -12,58 +12,186 @@ function getImageUrl(path) {
   return `${API_BASE}/${cleanPath.replace(/^\/+/, "")}`;
 }
 
-export default function Home() {
+export default function Home({ searchTerm, category }) {
   const [products, setProducts] = useState([]);
   const [producers, setProducers] = useState([]);
   const [bartenders, setBartenders] = useState([]);
+  const [coctails, setCoctails] = useState([]); // <-- NUEVO
   const [slide, setSlide] = useState(0);
   const [masters, setMasters] = useState([]);
 
+// FETCH productos
+useEffect(() => {
+  fetch(`${API_BASE}/api/productos/public`)
+    .then((r) => r.json())
+    .then((d) => setProducts(d || []))
+    .catch(() => setProducts([]));
+}, []);
 
-  useEffect(() => {
-    fetch(`${API_BASE}/api/productos/public`)
-      .then((r) => r.json())
-      .then((d) => setProducts(d || []))
-      .catch(() => setProducts([]));
+// FETCH destilerías
+useEffect(() => {
+  fetch(`${API_BASE}/api/destilerias/public`)
+    .then((r) => r.json())
+    .then((d) => setProducers(d || []))
+    .catch(() => setProducers([]));
+}, []);
 
-    fetch(`${API_BASE}/api/destilerias/public`)
-      .then((r) => r.json())
-      .then((d) => setProducers(d || []))
-      .catch(() => setProducers([]));
+// FETCH bartenders
+useEffect(() => {
+  fetch(`${API_BASE}/api/bartenders/public`)
+    .then((r) => r.json())
+    .then((d) => setBartenders(d || []))
+    .catch(() => setBartenders([]));
+}, []);
 
-    fetch(`${API_BASE}/api/bartenders/public`)
-      .then((r) => r.json())
-      .then((d) => setBartenders(d || []))
-      .catch(() => setBartenders([]));
+// FETCH masters
+useEffect(() => {
+  fetch(`${API_BASE}/api/destilerias/public/masters`)
+    .then((r) => r.json())
+    .then((d) => setMasters(d || []))
+    .catch(() => setMasters([]));
+}, []);
 
-    fetch(`${API_BASE}/api/destilerias/public/masters`)
-      .then((r) => r.json())
-      .then((d) => setMasters(d || []))
-      .catch(() => setMasters([]));
+// FETCH cocteles
+useEffect(() => {
+  fetch(`${API_BASE}/api/cocteles/public`)
+    .then((r) => r.json())
+    .then((d) => setCoctails(d || []))
+    .catch(() => setCoctails([]));
+}, []);
 
-  }, []);
-
-  const bestRated = useMemo(() => products.slice(0, 4), [products]);
-
-  const perPage = 2;
-  const totalPages = Math.max(1, Math.ceil(bestRated.length / perPage));
-
-  const pageItems = bestRated.slice(
-    slide * perPage,
-    slide * perPage + perPage
+  // =========================
+  // FILTRO DE BUSCADOR
+  // =========================
+ const filteredProducers = producers.filter((p) =>
+  p?.nombre_comercial?.toLowerCase().includes(searchTerm?.toLowerCase() || "")
+);
+  const filteredProducts = products.filter((p) =>
+    p?.nombre?.toLowerCase().includes(searchTerm?.toLowerCase() || "")
   );
 
-  function prev() {
-    setSlide((s) => (s - 1 + totalPages) % totalPages);
-  }
+  const filteredBartenders = bartenders.filter((b) =>
+    b?.nombre_publico?.toLowerCase().includes(searchTerm?.toLowerCase() || "")
+  );
 
-  function next() {
-    setSlide((s) => (s + 1) % totalPages);
-  }
+  const filteredCoctails = coctails.filter((c) =>
+    c?.nombre?.toLowerCase().includes(searchTerm?.toLowerCase() || "")
+  );
+
+  const bestRated = useMemo(() => products.slice(0, 4), [products]);
+const perPage = 2;
+const totalPages = Math.max(1, Math.ceil(bestRated.length / perPage));
+const pageItems = bestRated.slice(slide * perPage, slide * perPage + perPage);
+
+function prev() {
+  setSlide((s) => (s - 1 + totalPages) % totalPages);
+}
+
+function next() {
+  setSlide((s) => (s + 1) % totalPages);
+}
 
   return (
     <div className="home-wrap">
+      {searchTerm && (
+        <section className="home-section">
+          <div className="section-title">Resultados de "{searchTerm}"</div>
 
+          {/* DESTILERÍAS */}
+          {filteredProducers.length > 0 && (
+            <div>
+              <h4>Destilerías</h4>
+              <div className="card-container grid-2">
+                {filteredProducers.map((p) => (
+                  <Link
+                    key={p.id_destileria}
+                    to={`/productores/${p.id_destileria}`}
+                    className="profile-card"
+                  >
+                   <img
+  src={getImageUrl(p.logo_url) || avatarFallback}
+  alt={p.nombre_comercial || "Destilería"}
+/>
+<div className="profile-name">{p.nombre_comercial || "Sin nombre"}</div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* PRODUCTOS */}
+          {filteredProducts.length > 0 && (
+            <div>
+              <h4>Productos</h4>
+              <div className="card-container grid-2">
+                {filteredProducts.map((p) => (
+                  <Link
+                    key={p.id_producto}
+                    to={`/productos/${p.id_producto}`}
+                    className="product-card"
+                  >
+                    <img
+                      src={getImageUrl(p.imagen_url) || avatarFallback}
+                      alt={p.nombre || "Producto"}
+                    />
+                    <div className="product-name">{p.nombre || "Sin nombre"}</div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* CÓCTELES */}
+          {filteredCoctails.length > 0 && (
+            <div>
+              <h4>Cocteles</h4>
+              <div className="card-container grid-2">
+                {filteredCoctails.map((c) => (
+                  <Link
+                    key={c.id_coctel}
+                    to={`/cocteles/${c.id_coctel}`}
+                    className="product-card"
+                  >
+                    <img
+                      src={getImageUrl(c.imagen_url) || avatarFallback}
+                      alt={c.nombre || "Cóctel"}
+                    />
+                    <div className="product-name">{c.nombre || "Sin nombre"}</div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* BARTENDERS */}
+          {filteredBartenders.length > 0 && (
+            <div>
+              <h4>Bartenders</h4>
+              <div className="card-container grid-2">
+                {filteredBartenders.map((b) => (
+                  <Link
+                    key={b.id_bartender}
+                    to={`/bartenders/${b.id_bartender}`}
+                    className="profile-card"
+                  >
+                    <img
+                      src={getImageUrl(b.foto_perfil) || avatarFallback}
+                      alt={b.nombre_publico || "Bartender"}
+                    />
+                    <div className="profile-name">{b.nombre_publico || "Sin nombre"}</div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* MENSAJE SI NO HAY RESULTADOS */}
+          {filteredProducers.length === 0 &&
+            filteredProducts.length === 0 &&
+            filteredBartenders.length === 0 &&
+            filteredCoctails.length === 0 && <p>No se encontraron resultados.</p>}
+        </section>
+      )}
 
       {/* ================= HERO ================= */}
       <section className="home-hero">
