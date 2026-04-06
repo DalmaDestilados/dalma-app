@@ -25,7 +25,7 @@ export default function ForgotPassword() {
 
     setLoading(true);
     try {
-      // ✅ Enviamos solo el string de email, no un objeto
+      // Enviamos solo el string de email, no un objeto
       await forgotPassword(clean);
       setDone(true);
     } catch (e2) {

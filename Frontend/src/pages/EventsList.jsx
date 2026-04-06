@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "../api";
 import EventModal from "../components/EventModal";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+const API_BASE = import.meta.env.VITE_API_BASE 
 
 export default function EventsList() {
   const [events, setEvents] = useState([]);

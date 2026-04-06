@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../api";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
-const avatarFallback = "/avatar-placeholder.png"; // o la imagen que ya uses
+const API_BASE = import.meta.env.VITE_API_BASE
+const avatarFallback = "/avatar-placeholder.png"; 
 
 export default function AdminBartendersList() {
   const [bartenders, setBartenders] = useState([]);

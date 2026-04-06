@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
+const API_BASE = import.meta.env.VITE_API_BASE;
 
 const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
@@ -7,11 +8,9 @@ export const useAuth = () => useContext(AuthContext);
 /* =========================
    BASES DE API
 ========================= */
-const API_AUTH = "http://localhost:3001/api/auth";
-const API_PASSWORD = "http://localhost:3001/api/password";
-
-/* 🔥 NUEVO */
-const API_USUARIOS = "http://localhost:3001/api/usuarios";
+const API_AUTH = `${API_BASE}/api/auth`;
+const API_PASSWORD = `${API_BASE}/api/password`;
+const API_USUARIOS = `${API_BASE}/api/usuarios`;
 
 /* =========================
    LOCKS
@@ -40,7 +39,7 @@ export function AuthProvider({ children }) {
     return config;
   });
 
-  /* 🔥 NUEVO: cargar perfil completo */
+  /* NUEVO: cargar perfil completo */
   async function cargarPerfilCompleto() {
     try {
       const token = localStorage.getItem("token");

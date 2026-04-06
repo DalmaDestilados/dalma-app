@@ -5,7 +5,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import masterFallback from "../assets/Masters/MaestroDestilador.jpg";
 import eventoImg from "../assets/Evento/Evento.jpg";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+const API_BASE = import.meta.env.VITE_API_BASE 
 
 export default function ProducerDetail() {
   const { producerId } = useParams();
@@ -21,7 +21,7 @@ export default function ProducerDetail() {
   const [slide, setSlide] = useState(0);
 
   /* =========================
-     🔥 UTIL IMAGEN (FIX)
+     UTIL IMAGEN (FIX)
   ========================= */
   function getImageUrl(path) {
     if (!path) return null;

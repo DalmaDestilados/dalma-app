@@ -1,0 +1,40 @@
+# --- General ---
+.DS_Store
+.vscode/
+.idea/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- Dependencias (Ignora ambas carpetas) ---
+node_modules/
+Backend/node_modules/
+Frontend/node_modules/
+
+# --- Variables de Entorno (CRÍTICO por seguridad) ---
+.env
+Backend/.env
+Frontend/.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# --- Compilación y Producción ---
+dist/
+build/
+Frontend/dist/
+Frontend/build/
+
+# --- Base de Datos y Temporales ---
+*.sql
+*.sqlite
+.temp/
+.tmp/
+
+# --- Archivos subidos por usuarios ---
+# Ignoramos el contenido de uploads para no llenar el repo de fotos de prueba,
+# pero mantenemos la carpeta con un archivo .gitkeep si existe.
+Backend/uploads/*
+!Backend/uploads/.gitkeep

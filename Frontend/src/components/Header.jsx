@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext.jsx";
 
 const API_BASE =
-  import.meta.env.VITE_API_BASE || "http://localhost:3001";
+  import.meta.env.VITE_API_BASE 
 
 export default function Header({
   searchTerm,

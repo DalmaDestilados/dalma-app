@@ -52,7 +52,7 @@ export default function AdminDestilerias() {
   }
 
   /* =========================
-     ✅ VALIDACIONES SEGURAS
+     VALIDACIONES SEGURAS
   ========================= */
   function validarFormulario() {
     if (!form.nombre_comercial.trim())

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
-const API_BASE = "http://localhost:3001";
+const API_BASE = import.meta.env.VITE_API_BASE;
 
 export default function CoctailList() {
   const [cocteles, setCocteles] = useState([]);
@@ -11,7 +11,7 @@ export default function CoctailList() {
   const [searchMode, setSearchMode] = useState(null); // nombre | destilado | ingrediente
 
   /* =========================
-     🔥 FIX IMÁGENES
+     FIX IMÁGENES
   ========================= */
   function getImageUrl(path) {
     if (!path) return null;
@@ -19,19 +19,18 @@ export default function CoctailList() {
   }
 
   useEffect(() => {
-    // ✅ RUTA PÚBLICA CORRECTA
-    fetch("http://localhost:3001/api/cocteles/public")
-      .then((res) => {
-        if (!res.ok) throw new Error("Error al cargar cócteles");
-        return res.json();
-      })
-      .then((data) => setCocteles(data || []))
-      .catch((err) => {
-        console.error("Error cargando cócteles", err);
-        setCocteles([]);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+  fetch(`${API_BASE}/api/cocteles/public`)
+    .then((res) => {
+      if (!res.ok) throw new Error("Error al cargar cócteles");
+      return res.json();
+    })
+    .then((data) => setCocteles(data || []))
+    .catch((err) => {
+      console.error("Error cargando cócteles", err);
+      setCocteles([]);
+    })
+    .finally(() => setLoading(false));
+}, []);
 
   /* ===========================
      FILTRO REAL (FIX DEFINITIVO)

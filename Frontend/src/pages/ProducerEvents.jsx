@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { apiFetch } from "../api";
 import EventModal from "../components/EventModal";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+const API_BASE = import.meta.env.VITE_API_BASE 
 
 export default function ProducerEvents() {
   const { producerId } = useParams();

@@ -1,5 +1,5 @@
 const API_BASE =
-  import.meta.env.VITE_API_BASE || "http://localhost:3001";
+  import.meta.env.VITE_API_BASE
 
 async function safeJson(res) {
   const text = await res.text();
@@ -17,7 +17,7 @@ export async function apiFetch(path, options = {}) {
     ...(options.headers || {}),
   };
 
-  // ✅ SIEMPRE enviar Bearer token si existe
+  // SIEMPRE enviar Bearer token si existe
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
@@ -25,7 +25,7 @@ export async function apiFetch(path, options = {}) {
   const isFormData =
     typeof FormData !== "undefined" && options.body instanceof FormData;
 
-  // ✅ SOLO setear Content-Type si NO es FormData
+  // SOLO setear Content-Type si NO es FormData
   if (!isFormData && !headers["Content-Type"]) {
     headers["Content-Type"] = "application/json";
   }

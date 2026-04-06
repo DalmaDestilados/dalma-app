@@ -4,17 +4,17 @@ import { useNavigate, useParams } from "react-router-dom";
 /* ===== IMAGEN LOCAL DEL CÓCTEL (FALLBACK) ===== */
 import coctelImg from "../assets/Cocteles/Coctel1.jpg";
 
-const API_BASE = "http://localhost:3001";
+const API_BASE = import.meta.env.VITE_API_BASE;
 
 export default function CoctelDetail() {
-  const { cocktailId } = useParams(); // ✅ FIX
+  const { cocktailId } = useParams(); 
   const navigate = useNavigate();
 
   const [coctel, setCoctel] = useState(null);
   const [loading, setLoading] = useState(true);
 
   /* =========================
-     🔥 FIX IMAGEN (IGUAL AL LIST)
+     FIX IMAGEN (IGUAL AL LIST)
   ========================= */
   function getImageUrl(path) {
     if (!path) return null;
@@ -33,7 +33,7 @@ export default function CoctelDetail() {
   }, [cocktailId]);
 
   /* =========================
-     🔥 FIX INGREDIENTES
+      FIX INGREDIENTES
      - ARRAY → OK
      - STRING (GROUP_CONCAT) → OK
   ========================= */

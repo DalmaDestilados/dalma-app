@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+const API_BASE = import.meta.env.VITE_API_BASE 
 
 export default function ProductList({ searchTerm }) {
   const { producerId } = useParams();
@@ -43,7 +43,7 @@ export default function ProductList({ searchTerm }) {
   }
 
   /* =========================
-     🔍 FILTRO POR BUSCADOR HEADER
+      FILTRO POR BUSCADOR HEADER
   ========================= */
   const filteredProductos = useMemo(() => {
     const q = searchTerm?.trim().toLowerCase();

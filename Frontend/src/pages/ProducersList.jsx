@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+
 /* =========================
    SVG DESTILERÍA (FALLBACK)
 ========================= */
@@ -24,9 +25,9 @@ export default function ProducersList({ searchTerm }) {
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
-
-  const API_URL = "http://localhost:3001/api/destilerias";
-  const API_URL_BASE = "http://localhost:3001";
+  const API_BASE = import.meta.env.VITE_API_BASE;
+  const API_URL = `${API_BASE}/api/destilerias`;
+  const API_URL_BASE = API_BASE;
 
   useEffect(() => {
     fetchDestilerias();
@@ -47,7 +48,7 @@ export default function ProducersList({ searchTerm }) {
   }
 
   /* =========================
-     🔍 FILTRO POR BUSCADOR HEADER
+     FILTRO POR BUSCADOR HEADER
   ========================= */
   const filteredDestilerias = useMemo(() => {
     const q = searchTerm?.trim().toLowerCase();

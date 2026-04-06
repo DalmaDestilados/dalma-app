@@ -3,7 +3,7 @@ import { useAuth } from "../AuthContext.jsx";
 import { apiFetch } from "../api";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+const API_BASE = import.meta.env.VITE_API_BASE 
 
 export default function Profile() {
   const { user, logout, setUser } = useAuth();

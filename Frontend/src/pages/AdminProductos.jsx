@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { apiFetch } from "../api";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+const API_BASE = import.meta.env.VITE_API_BASE 
 
 export default function AdminProductos() {
   const { idDestileria } = useParams();
@@ -95,7 +95,7 @@ export default function AdminProductos() {
   }
 
   /* =========================
-     ✅ VALIDACIONES SEGURAS
+     VALIDACIONES SEGURAS
   ========================= */
   function validarFormulario() {
     if (!form.nombre.trim()) return "El nombre es obligatorio";

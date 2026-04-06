@@ -5,7 +5,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import avatarFallback from "../assets/Masters/MaestroDestilador.jpg";
 import eventoImg from "../assets/Evento/Evento.jpg";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+const API_BASE = import.meta.env.VITE_API_BASE 
 
 export default function BartenderDetail() {
   const { bartenderId } = useParams();
@@ -29,7 +29,7 @@ export default function BartenderDetail() {
   useEffect(() => {
     async function fetchData() {
       try {
-        // 🔥 PERFIL
+        //  PERFIL
         const resPerfil = await fetch(
           `${API_BASE}/api/bartenders/public/${bartenderId}`
         );
